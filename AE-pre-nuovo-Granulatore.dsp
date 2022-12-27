@@ -1,5 +1,6 @@
 declare name "Agostino Di Scipio - AUDIBLE ECOSYSTEMICS n.2";
 declare author "Luca Spanedda";
+declare author "Dario Sanfilippo";
 declare version "alpha";
 declare description " 2022 version - Realised on composer's instructions
 of the year 2017 edited in L’Aquila, Italy";
