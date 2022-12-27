@@ -9,9 +9,9 @@ of the year 2017 edited in L’Aquila, Italy";
 import("stdfaust.lib");
 
 
-//------- ------------- ----- -----------
+//-------  -------------   -----  -----------
 //-- AE2 -----------------------------------------------------------------------
-//------- --------
+//-------  --------
 
 // PERFORMANCE SYSTEM VARIABLES
 SampleRate = 44100;
@@ -25,332 +25,336 @@ cntrlMicFB = 0.995;
 
 
 // TEST with Sinusoids
-// Sin in Column : 1 2 3 4 5 6 7 8 9
+// Sin in Column :    1     2     3     4     5     6     7    8    9
 // frequencies_list = 1000, 1000, 1000, 3000, 3000, 3000, 500, 500, 500;
-// dB_list = -18, -18, -18, -18, -18, -18, -18, -18, -18;
-// seconds_list = 2, 5, 10, 2, 5, 10, 2, 5, 10;
+// dB_list =          -18,  -18,  -18,  -18,  -18,  -18,  -18, -18, -18;
+// seconds_list =     2,    5,    10,   2,    5,    10,   2,   5,   10;
 SinTestN = 1; // CHOOSE TEST from LIST
 SineInit = 0; // Launch Test when is System Compiled/Launched
 SineTestonAllMics = 1; // Test on AllMics 1/ON - 0/OFF
 SineTestonMics123 = 0; // Test on Mics123 1/ON - 0/OFF
 
 
-SystemTEST = 
- ( TestList1(SinTestN) : SineTest * SineTestonAllMics <: si.bus(4) ),
- ( TestList1(SinTestN) : SineTest * SineTestonMics123 <: si.bus(3),0 ),
- ( si.bus(2) <: par(i, 4, _ * ButtonMICSto13and24) ) :> si.bus(4)
+SystemTEST =    
+    ( TestList1(SinTestN) : SineTest * SineTestonAllMics <: si.bus(4)   ),
+    ( TestList1(SinTestN) : SineTest * SineTestonMics123 <: si.bus(3),0 ),
+    ( si.bus(2) <: par(i, 4, _ * ButtonMICSto13and24) ) :> si.bus(4)
 with {
- ButtonSintoMICS = checkbox("Sine to MICS");
- ButtonMICSto13and24 = checkbox("MICS 1/2 to 1+3/2+4");
- // TEST WITH SINE SIGNAL
- SineTest(freq, dB, sec, trigger) = signal
- with {
- amp = ba.db2linear(dB);
- duration = (trigger - trigger@(ma.SR * sec)) > 0;
- signal = os.osc(freq) * amp * duration;
- };
- TestList1(i) = ba.take(i, frequencies_list), 
- ba.take(i, dB_list),
- ba.take(i, seconds_list),
- ButtonSintoMICS + SineInit
- with {
- // Sin in Column : 1 2 3 4 5 6 7 8 9
- frequencies_list = 1000, 1000, 1000, 3000, 3000, 3000, 500, 500, 500;
- dB_list = -18, -18, -18, -18, -18, -18, -18, -18, -18;
- seconds_list = 2, 5, 10, 2, 5, 10, 2, 5, 10;
- };
- };
-// process = SystemTEST;
+    ButtonSintoMICS = checkbox("Sine to MICS");
+    ButtonMICSto13and24 = checkbox("MICS 1/2 to 1+3/2+4");
+    // TEST WITH SINE SIGNAL
+    SineTest(freq, dB, sec, trigger) = signal
+    with {
+        amp = ba.db2linear(dB);
+        duration = (trigger - trigger@(ma.SR * sec)) > 0;
+        signal = os.osc(freq) * amp * duration;
+        };
+    TestList1(i) =      ba.take(i, frequencies_list), 
+                        ba.take(i, dB_list),
+                        ba.take(i, seconds_list),
+                        ButtonSintoMICS + SineInit
+    with {
+        // Sin in Column : 1     2     3     4     5     6     7    8    9
+        frequencies_list = 1000, 1000, 1000, 3000, 3000, 3000, 500, 500, 500;
+        dB_list =          -18,  -18,  -18,  -18,  -18,  -18,  -18, -18, -18;
+        seconds_list =     2,    5,    10,   2,    5,    10,   2,   5,   10;
+        };
+    };
+// process =    SystemTEST;
 
 
 // MAIN SYSTEM FUNCTION
 process = 
- SystemTEST : 
- ( 
- signalflow1a:signalflow1b:signalflow2a:signalflow2b:signalflow3
- ) ~ si.bus(2) :
- (
- ( par(i, 2, hgroup("GrainOut", inspect(i,-1,1))) : si.block(2) ),
- par(i, 6, hgroup("Signal Flow 3", inspect(i,-1,1))),
- ( par(i, 4, hgroup("Mics", inspect(i,-1,1))) : si.block(4) ),
- par(i, 8, hgroup("Signal Flow 1a", inspect(i,-1,1))),
- par(i, 8, hgroup("Signal Flow 1b", inspect(i,-1,1))),
- par(i, 8, hgroup("Signal Flow 2a", inspect(i,-1,1)))
- );
- // AE2 System outs
- //( si.block(2), si.bus(6), si.block(28) ): 
- //par(i, 6, hgroup("out", inspect(i,-1,1))); 
- // Granulator outs
- //( si.bus(2), si.block(34) ): 
- //par(i, 2, hgroup("GrainOut", inspect(i,-1,1)));
- // Direct Mics outs
- //( si.block(8), si.bus(4), si.block(24) ): 
- //par(i, 4, hgroup("Mics", inspect(i,-1,1)));
- // sf1a
- //( si.block(12), si.bus(8), si.block(16) ): 
- //par(i, 8, hgroup("Signal Flow 1a", inspect(i,-1,1)));
- // sf1b
- //( si.block(20), si.bus(8), si.block(8) ): 
- //par(i, 8, hgroup("Signal Flow 1b", inspect(i,-1,1)));
- // sf2a
- //( si.block(28), si.bus(8) ): 
- //par(i, 8, hgroup("Signal Flow 2a", inspect(i,-1,1)));
+    SystemTEST : 
+    (   
+        signalflow1a:signalflow1b:signalflow2a:signalflow2b:signalflow3
+    ) ~ si.bus(2) :
+    (
+        ( par(i, 2, hgroup("GrainOut", inspect(i,-1,1))) : si.block(2) ),
+          par(i, 6, hgroup("Signal Flow 3", inspect(i,-1,1))),
+        ( par(i, 4, hgroup("Mics", inspect(i,-1,1))) : si.block(4) ),
+          par(i, 8, hgroup("Signal Flow 1a", inspect(i,-1,1))),
+          par(i, 8, hgroup("Signal Flow 1b", inspect(i,-1,1))),
+          par(i, 8, hgroup("Signal Flow 2a", inspect(i,-1,1)))
+    );
+    // AE2 System outs
+    //( si.block(2), si.bus(6), si.block(28) ): 
+    //par(i, 6, hgroup("out", inspect(i,-1,1)));                                 
+    // Granulator outs
+    //( si.bus(2), si.block(34) ): 
+    //par(i, 2, hgroup("GrainOut", inspect(i,-1,1)));
+    // Direct Mics outs
+    //( si.block(8), si.bus(4), si.block(24) ): 
+    //par(i, 4, hgroup("Mics", inspect(i,-1,1)));
+    // sf1a
+    //( si.block(12), si.bus(8), si.block(16) ): 
+    //par(i, 8, hgroup("Signal Flow 1a", inspect(i,-1,1)));
+    // sf1b
+    //( si.block(20), si.bus(8), si.block(8) ): 
+    //par(i, 8, hgroup("Signal Flow 1b", inspect(i,-1,1)));
+    // sf2a
+    //( si.block(28), si.bus(8) ): 
+    //par(i, 8, hgroup("Signal Flow 2a", inspect(i,-1,1)));
 
 
 // SYSTEM SIGNALS FLOW FUNCTIONS
 signalflow1a( grainOut1, grainOut2, mic1, mic2, mic3, mic4 ) =
- grainOut1, grainOut2, mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain
- with{
- map6sumx6 = (mic3 : integrator(.01) : delayfb(.01,.95)) +
- (mic4 : integrator(.01) : delayfb(.01,.95)) : 
- \(x).(6 + x * 6);
- localMaxDiff = ((map6sumx6, mic3) : localmax) ,
- ((map6sumx6, mic4) : localmax) :
- \(x,y).(x-y);
- SenstoExt = (map6sumx6, localMaxDiff) : localmax <: _ , 
- @(ba.sec2samp(12)) : + : * (.5) : LPButterworthN(1, .5) ;
- diffHL = ((mic3 + mic4) : HPButterworthN(3, var2) : integrator(.05)) ,
- ((mic3 + mic4) : LPButterworthN(3, var2) : integrator(.10)) :
- \(x,y).(x-y) * (1 - SenstoExt) :
- delayfb(0.01,0.995) : LPButterworthN(5, 25.0) : 
- \(x).(.5 + x * .5) : 
- // LIMIT - max - min
- limit(20000, 0);
- memWriteLev = (mic3 + mic4) : integrator(.1) : delayfb(.01,.9) :
- LPButterworthN(5, 25) :
- \(x).(1 - (inspect(100, -10, 10, x * x))) : 
- // LIMIT - max - min
- limit(1, 0);
- memWriteDel1 = memWriteLev : @(ba.sec2samp(var1 / 2)) : 
- // LIMIT - max - min
- limit(1, 0);
- memWriteDel2 = memWriteLev : @(ba.sec2samp(var1 / 3)) : 
- // LIMIT - max - min
- limit(1, 0);
- cntrlMain = (mic3 + mic4) * SenstoExt : integrator(.01) :
- delayfb(.01,.995) : LPButterworthN(5, 25) : 
- // LIMIT - max - min
- limit(1, 0);
- cntrlLev1 = cntrlMain : @(ba.sec2samp(var1 / 3)) : 
- // LIMIT - max - min
- limit(1, 0);
- cntrlLev2 = cntrlMain : @(ba.sec2samp(var1 / 2)) : 
- // LIMIT - max - min
- limit(1, 0);
- cntrlFeed = cntrlMain : \(x).(ba.if(x <= .5, 1.0, (1.0 - x) * 2.0)) : 
- // LIMIT - max - min
- limit(1, 0);
- };
+                            grainOut1, grainOut2, mic1, mic2, mic3, mic4,
+                            diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                            cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain
+    with{
+        map6sumx6 = (mic3 : integrator(.01) : delayfb(.01,.95)) +
+                    (mic4 : integrator(.01) : delayfb(.01,.95)) : 
+                    \(x).(6 + x * 6);
+        localMaxDiff =  ((map6sumx6, mic3) : localmax) ,
+                        ((map6sumx6, mic4) : localmax) :
+                        \(x,y).(x-y);
+        SenstoExt = (map6sumx6, localMaxDiff) : localmax <: _ , 
+                    @(ba.sec2samp(12)) : + : * (.5) : LPButterworthN(1, .5) ;
+        diffHL = ((mic3 + mic4) : HPButterworthN(3, var2) : integrator(.05)) ,
+                 ((mic3 + mic4) : LPButterworthN(3, var2) : integrator(.10)) :
+                 \(x,y).(x-y) * (1 - SenstoExt) :
+                 delayfb(0.01,0.995) : LPButterworthN(5, 25.0) : 
+                 \(x).(.5 + x * .5) : 
+                 // LIMIT - max - min
+                 limit(20000, 0);
+        memWriteLev =   (mic3 + mic4) : integrator(.1) : delayfb(.01,.9) :
+                        LPButterworthN(5, 25) :
+                        \(x).(1 - (inspect(100, -10, 10, x * x))) : 
+                        // LIMIT - max - min
+                        limit(1, 0);
+        memWriteDel1 =  memWriteLev : @(ba.sec2samp(var1 / 2)) : 
+                        // LIMIT - max - min
+                        limit(1, 0);
+        memWriteDel2 =  memWriteLev : @(ba.sec2samp(var1 / 3)) : 
+                        // LIMIT - max - min
+                        limit(1, 0);
+        cntrlMain = (mic3 + mic4) * SenstoExt : integrator(.01) :
+                    delayfb(.01,.995) : LPButterworthN(5, 25) : 
+                    // LIMIT - max - min
+                    limit(1, 0);
+        cntrlLev1 = cntrlMain : @(ba.sec2samp(var1 / 3)) : 
+                    // LIMIT - max - min
+                    limit(1, 0);
+        cntrlLev2 = cntrlMain : @(ba.sec2samp(var1 / 2)) : 
+                    // LIMIT - max - min
+                    limit(1, 0);
+        cntrlFeed = cntrlMain : \(x).(ba.if(x <= .5, 1.0, (1.0 - x) * 2.0)) : 
+                    // LIMIT - max - min
+                    limit(1, 0);
+    };
 //
 signalflow1b(
- grainOut1, grainOut2,
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain
- ) =
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
- cntrlMic1, cntrlMic2, directLevel, timeIndex1,
- timeIndex2, triangle1, triangle2, triangle3
- with{
- cntrlMic(x) = x : HPButterworthN(1, 50) : LPButterworthN(1, 6000) : 
- integrator(.01) : delayfb(.01,cntrlMicFB) : 
- LPButterworthN(5, .5);
- cntrlMic1 = mic1 : cntrlMic : 
- // LIMIT - max - min
- limit(1, 0);
- cntrlMic2 = mic2 : cntrlMic : 
- // LIMIT - max - min
- limit(1, 0);
- directLevel =
- (grainOut1+grainOut2) : integrator(.01) : delayfb(.01,.97) : 
- LPButterworthN(5, .5)
- <: _, delayfb(var1 * 2, (1 - var3) * 0.5) : +
- : \(x).(1 - x * .5) : 
- // LIMIT - max - min
- limit(1, 0);
- timeIndex1 = triangleWave( 1 / (var1 * 2) ) : \(x).( (x - 2) * 0.5 ) : 
- // LIMIT - max - min
- limit(1, -1);
- timeIndex2 = triangleWave( 1 / (var1 * 2) ) : \(x).( (x + 1) * 0.5 ) : 
- // LIMIT - max - min
- limit(1, -1);
- triangle1 = triangleWave( 1 / (var1 * 6) ) * memWriteLev : 
- // LIMIT - max - min
- limit(1, 0);
- triangle2 = triangleWave( var1 * (1 - cntrlMain) ) : 
- // LIMIT - max - min
- limit(1, 0);
- triangle3 = triangleWave( 1 / var1 ) : 
- // LIMIT - max - min
- limit(1, 0);
- };
+                grainOut1, grainOut2,
+                mic1, mic2, mic3, mic4,
+                diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain
+                    ) =
+                        mic1, mic2, mic3, mic4,
+                        diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                        cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
+                        cntrlMic1, cntrlMic2, directLevel, timeIndex1,
+                        timeIndex2, triangle1, triangle2, triangle3
+    with{
+        cntrlMic(x) =   x : HPButterworthN(1, 50) : LPButterworthN(1, 6000) : 
+                integrator(.01) : delayfb(.01,cntrlMicFB) : 
+                LPButterworthN(5, .5);
+        cntrlMic1 = mic1 : cntrlMic : 
+        // LIMIT - max - min
+        limit(1, 0);
+        cntrlMic2 = mic2 : cntrlMic : 
+        // LIMIT - max - min
+        limit(1, 0);
+        directLevel =
+              (grainOut1+grainOut2) : integrator(.01) : delayfb(.01,.97) : 
+              LPButterworthN(5, .5)
+                <: _, delayfb(var1 * 2, (1 - var3) * 0.5) : +
+                    : \(x).(1 - x * .5) : 
+        // LIMIT - max - min
+        limit(1, 0);
+        timeIndex1 = triangleWave( 1 / (var1 * 2) ) : \(x).( (x - 2) * 0.5 ) : 
+        // LIMIT - max - min
+        limit(1, -1);
+        timeIndex2 = triangleWave( 1 / (var1 * 2) ) : \(x).( (x + 1) * 0.5 ) : 
+        // LIMIT - max - min
+        limit(1, -1);
+        triangle1 = triangleWave( 1 / (var1 * 6) ) * memWriteLev : 
+        // LIMIT - max - min
+        limit(1, 0);
+        triangle2 = triangleWave( var1 * (1 - cntrlMain) ) : 
+        // LIMIT - max - min
+        limit(1, 0);
+        triangle3 = triangleWave( 1 / var1 ) : 
+        // LIMIT - max - min
+        limit(1, 0);
+    };
 //
 signalflow2a(
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
- cntrlMic1, cntrlMic2, directLevel, timeIndex1,
- timeIndex2, triangle1, triangle2, triangle3
- ) =
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
- cntrlMic1, cntrlMic2, directLevel, timeIndex1,
- timeIndex2, triangle1, triangle2, triangle3,
- sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7
- with{
- micIN1 = mic1 : HPButterworthN(1, 50) : 
- LPButterworthN(1, 6000) * (1 - cntrlMic1);
- micIN2 = mic2 : HPButterworthN(1, 50) : 
- LPButterworthN(1, 6000) * (1 - cntrlMic2);
- SRSect1(x) = x : sampler( var1,
- (1 - memWriteDel2),
- (var2 + (diffHL * 1000))/261
- ) : HPButterworthN(4, 50) : 
- @(ba.sec2samp(var1/2));
- SRSect2(x) = x : sampler( var1,
- (memWriteLev + memWriteDel1)/2,
- ( 290 - (diffHL * 90))/261
- ) : HPButterworthN(4, 50) : 
- @(ba.sec2samp(var1));
- SRSect3(x) = x : sampler( var1, (1 - memWriteDel1),
- ((var2 * 2) - (diffHL * 1000))/261
- ) : HPButterworthN(4, 50);
- SRSectBP1(x) = x : SRSect3 : BPsvftpt( diffHL
- * 400 : limit(1,20000),
- (var2 / 2) * memWriteDel2
- : limit(1,20000) );
- SRSectBP2(x) = x : SRSect3 : BPsvftpt( (1 - diffHL)
- * 800 : limit(1,20000),
- var2 * (1 - memWriteDel1)
- : limit(1,20000) );
- SRSect4(x) = x : sampler(var1, 1, (250 + (diffHL * 20))/261);
- SRSect5(x) = x : sampler(var1, memWriteLev, .766283);
- fbG = 1; // normalization for SampleWriteLoop Feedback
- SampleWriteLoop = loop ~ _ * fbG
- with{
- loop(fb) =
- (
- ( SRSect1(fb),
- SRSect2(fb),
- SRSectBP1(fb),
- SRSectBP2(fb) :> + ) * (cntrlFeed * memWriteLev)
- ) <:
- ( _ + (micIN1+micIN2) : _ * triangle1 ),
- _,
- SRSect4(fb),
- SRSect5(fb),
- SRSect3(fb);
- };
- sig1 = micIN1 * directLevel : 
- // LIMIT - max - min
- limit(1, -1);
- sig2 = micIN2 * directLevel : 
- // LIMIT - max - min
- limit(1, -1);
- sampWOut = SampleWriteLoop : \(A,B,C,D,E).(A);
- sig3 = SampleWriteLoop : \(A,B,C,D,E).(B) :
- _ * memWriteLev :
- delayfb(.05 * cntrlMain, 0)
- * triangle2 * directLevel : 
- // LIMIT - max - min
- limit(1, -1);
- sig4 = SampleWriteLoop : \(A,B,C,D,E).(B) :
- _ * memWriteLev
- * (1-triangle2) * directLevel : 
- // LIMIT - max - min
- limit(1, -1);
- sig5 = SampleWriteLoop : \(A,B,C,D,E).(C) :
- HPButterworthN(4, 50) :
- @(ba.sec2samp(var1 / 3)) : 
- // LIMIT - max - min
- limit(1, -1);
- sig6 = SampleWriteLoop : \(A,B,C,D,E).(D) :
- HPButterworthN(4, 50) :
- @(ba.sec2samp(var1 / 2.5)) : 
- // LIMIT - max - min
- limit(1, -1);
- sig7 = SampleWriteLoop : \(A,B,C,D,E).(E) :
- @(ba.sec2samp(var1 / 1.5))
- * directLevel : 
- // LIMIT - max - min
- limit(1, -1);
- };
+                mic1, mic2, mic3, mic4,
+                diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
+                cntrlMic1, cntrlMic2, directLevel, timeIndex1,
+                timeIndex2, triangle1, triangle2, triangle3
+                    ) =
+                        mic1, mic2, mic3, mic4,
+                        diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                        cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
+                        cntrlMic1, cntrlMic2, directLevel, timeIndex1,
+                        timeIndex2, triangle1, triangle2, triangle3,
+                        sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7
+    with{
+        micIN1 =  mic1 : HPButterworthN(1, 50) : 
+                  LPButterworthN(1, 6000) * (1 - cntrlMic1);
+        micIN2 =  mic2 : HPButterworthN(1, 50) : 
+                  LPButterworthN(1, 6000) * (1 - cntrlMic2);
+        SRSect1(x) = x : sampler( var1,
+                                 (1 - memWriteDel2),
+                                 (var2 + (diffHL * 1000))/261
+                                ) : HPButterworthN(4, 50) : 
+                                  @(ba.sec2samp(var1/2));
+        SRSect2(x) = x : sampler( var1,
+                                  (memWriteLev + memWriteDel1)/2,
+                                  ( 290 - (diffHL * 90))/261
+                                ) : HPButterworthN(4, 50) : 
+                                  @(ba.sec2samp(var1));
+        SRSect3(x) = x : sampler( var1, (1 - memWriteDel1),
+                                  ((var2 * 2) - (diffHL * 1000))/261
+                                ) : HPButterworthN(4, 50);
+            SRSectBP1(x) = x : SRSect3 : BPsvftpt( diffHL
+                                                   * 400 : limit(1,20000),
+                                                   (var2 / 2) * memWriteDel2
+                                                   : limit(1,20000) );
+            SRSectBP2(x) = x : SRSect3 : BPsvftpt( (1 - diffHL)
+                                                    * 800 : limit(1,20000),
+                                                    var2 * (1 - memWriteDel1)
+                                                    : limit(1,20000) );
+        SRSect4(x) = x : sampler(var1, 1, (250 + (diffHL * 20))/261);
+        SRSect5(x) = x : sampler(var1, memWriteLev, .766283);
+        fbG = 1; // normalization for SampleWriteLoop Feedback
+        SampleWriteLoop = loop ~ _ * fbG
+            with{
+                loop(fb) =
+                (
+                    ( SRSect1(fb),
+                    SRSect2(fb),
+                    SRSectBP1(fb),
+                    SRSectBP2(fb) :> + ) * (cntrlFeed * memWriteLev)
+                )   <:
+                        ( _ + (micIN1+micIN2) : _ * triangle1 ),
+                          _,
+                          SRSect4(fb),
+                          SRSect5(fb),
+                          SRSect3(fb);
+            };
+        sig1 = micIN1 * directLevel : 
+        // LIMIT - max - min
+        limit(1, -1);
+        sig2 = micIN2 * directLevel : 
+        // LIMIT - max - min
+        limit(1, -1);
+        sampWOut = SampleWriteLoop : \(A,B,C,D,E).(A);
+        sig3 = SampleWriteLoop : \(A,B,C,D,E).(B) :
+                                                  _ * memWriteLev :
+                                                  delayfb(.05 * cntrlMain, 0)
+                                                  * triangle2 * directLevel : 
+        // LIMIT - max - min
+        limit(1, -1);
+        sig4 = SampleWriteLoop : \(A,B,C,D,E).(B) :
+                                                  _ * memWriteLev
+                                                  * (1-triangle2) * directLevel : 
+        // LIMIT - max - min
+        limit(1, -1);
+        sig5 = SampleWriteLoop : \(A,B,C,D,E).(C) :
+                                                  HPButterworthN(4, 50) :
+                                                  @(ba.sec2samp(var1 / 3)) : 
+        // LIMIT - max - min
+        limit(1, -1);
+        sig6 = SampleWriteLoop : \(A,B,C,D,E).(D) :
+                                                  HPButterworthN(4, 50) :
+                                                  @(ba.sec2samp(var1 / 2.5)) : 
+        // LIMIT - max - min
+        limit(1, -1);
+        sig7 = SampleWriteLoop : \(A,B,C,D,E).(E) :
+                                                  @(ba.sec2samp(var1 / 1.5))
+                                                  * directLevel : 
+        // LIMIT - max - min
+        limit(1, -1);
+    };
 //
 signalflow2b(
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
- cntrlMic1, cntrlMic2, directLevel, timeIndex1,
- timeIndex2, triangle1, triangle2, triangle3,
- sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7
- ) =
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
- cntrlMic1, cntrlMic2, directLevel, timeIndex1,
- timeIndex2, triangle1, triangle2, triangle3,
- sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7,
- grainOut1, grainOut2, out1, out2
- with{
- grainOut1 = granular_sampling(var1, timeIndex1, memWriteDel1, cntrlLev1, 21, sampWOut);
- grainOut2 = granular_sampling(var1, timeIndex2, memWriteDel2, cntrlLev2, 20, sampWOut);
- out1 =
- (
- ( sig5 : @(ba.sec2samp(.04)) * (1 - triangle3) ),
- ( sig5 * triangle3 ),
- ( sig6 : @(ba.sec2samp(.036)) * (1 - triangle3) ),
- ( sig6 : @(ba.sec2samp(.036)) * triangle3 ),
- sig1,
- 0,
- sig4,
- grainOut1 * (1 - memWriteLev) + grainOut2 * memWriteLev
- ) :> + : 
- // LIMIT - max - min
- limit(1, -1);
- out2 =
- (
- ( sig5 * (1 - triangle3) ),
- ( sig5 : @(ba.sec2samp(.040)) * triangle3 ),
- ( sig6 * (1 - triangle3) ),
- ( sig6 * triangle3 ),
- sig2,
- sig3,
- sig7,
- grainOut1 * memWriteLev + grainOut2 * (1 - memWriteLev)
- ) :> + : 
- // LIMIT - max - min
- limit(1, -1);
- };
+                mic1, mic2, mic3, mic4,
+                diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
+                cntrlMic1, cntrlMic2, directLevel, timeIndex1,
+                timeIndex2, triangle1, triangle2, triangle3,
+                sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7
+                    ) =
+                        mic1, mic2, mic3, mic4,
+                        diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                        cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
+                        cntrlMic1, cntrlMic2, directLevel, timeIndex1,
+                        timeIndex2, triangle1, triangle2, triangle3,
+                        sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7,
+                        grainOut1, grainOut2, out1, out2
+    with{
+        grainOut1 = sampWOut <:
+                        granular_sampling(    grainsPAR,var1,timeIndex1,
+                                              memWriteDel1,cntrlLev1,21  );
+        grainOut2 = sampWOut <:
+                        granular_sampling(    grainsPAR,var1,timeIndex2,
+                                              memWriteDel2,cntrlLev2,20  );
+        out1 =
+                (
+                          ( sig5 : @(ba.sec2samp(.04)) * (1 - triangle3) ),
+                                                      ( sig5 * triangle3 ),
+                         ( sig6 : @(ba.sec2samp(.036)) * (1 - triangle3) ),
+                               ( sig6 : @(ba.sec2samp(.036)) * triangle3 ),
+                                                                      sig1,
+                                                                         0,
+                                                                      sig4,
+                    grainOut1 * (1 - memWriteLev) + grainOut2 * memWriteLev
+                ) :> + : 
+                // LIMIT - max - min
+                limit(1, -1);
+        out2 =
+                (
+                                                ( sig5 * (1 - triangle3) ),
+                               ( sig5 : @(ba.sec2samp(.040)) * triangle3 ),
+                                                ( sig6 * (1 - triangle3) ),
+                                                      ( sig6 * triangle3 ),
+                                                                      sig2,
+                                                                      sig3,
+                                                                      sig7,
+                    grainOut1 * memWriteLev + grainOut2 * (1 - memWriteLev)
+                ) :> + : 
+                // LIMIT - max - min
+                limit(1, -1);
+    };
 //
 signalflow3(
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev,
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
- cntrlMic1, cntrlMic2, directLevel, timeIndex1,
- timeIndex2, triangle1, triangle2, triangle3,
- sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7,
- grainOut1, grainOut2, out1, out2
- ) =
- grainOut1, grainOut2,
- out1, out2, 
- out2@(var4 / 2 / 344), out1@(var4 / 2 / 344), 
- out1@(var4 / 344), out2@(var4 / 344), 
- mic1, mic2, mic3, mic4,
- diffHL, memWriteDel1, memWriteDel2, memWriteLev, 
- cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
- cntrlMic1, cntrlMic2, directLevel, timeIndex1, 
- timeIndex2, triangle1, triangle2, triangle3,
- sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7;
+                mic1, mic2, mic3, mic4,
+                diffHL, memWriteDel1, memWriteDel2, memWriteLev,
+                cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
+                cntrlMic1, cntrlMic2, directLevel, timeIndex1,
+                timeIndex2, triangle1, triangle2, triangle3,
+                sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7,
+                grainOut1, grainOut2, out1, out2
+            ) =
+                grainOut1, grainOut2,
+                out1, out2, 
+                out2@(var4 / 2 / 344), out1@(var4 / 2 / 344), 
+                out1@(var4 / 344), out2@(var4 / 344), 
+                mic1, mic2, mic3, mic4,
+                diffHL, memWriteDel1, memWriteDel2, memWriteLev, 
+                cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain,
+                cntrlMic1, cntrlMic2, directLevel, timeIndex1, 
+                timeIndex2, triangle1, triangle2, triangle3,
+                sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7;
 
 
-//------- ------------- ----- -----------
+//-------  -------------   -----  -----------
 //-- LIBRARY -------------------------------------------------------------------
-//------- --------
+//-------  --------
 
 //----------------------------------------------------------------- UTILITIES --
 
@@ -366,8 +370,8 @@ selector(sel,x,y) = ( x * (1-sel) + y * (sel) );
 SAH2(sec,y) = \(FB).( selector( phasor(1/sec) : \(x).(x < x'), FB, y ) )~ _ ;
 // see signal values 
 inspect(i, lower, upper) = 
- _ <: _ , 
- vbargraph("sig_%2i [style:numerical]", lower, upper) : attach;
+    _ <:    _ , 
+            vbargraph("sig_%2i [style:numerical]", lower, upper) : attach;
 //process = (os.osc(.01) : inspect(1, .1, -1, 1));
 diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
 // var 4 and 1 max comparation (max in out)
@@ -478,64 +482,63 @@ primes =
 10651, 10657, 10663, 10667);
 // index of the primes numbers
 primeNumbers(index) = ba.take(index , list)
- with{
- list = primes;
+  with{
+    list = primes;
 };
 
 //---------------------------------------------------------------- SAMPLEREAD --
 /*
 sampler(memSeconds, memChunk, ratio, x) =
 it.frwtable(tabInt, 192000 * (var1), .0, ba.period(memSeconds * ma.SR), x, rIdx)
- with {
- readingLength = si.smoo(memChunk : limit(1,.001)) * memSeconds * ma.SR;
- readingRate = ma.SR / readingLength;
- rIdx = os.phasor(readingLength, readingRate * si.smoo(ratio));
- };
+    with {
+        readingLength = si.smoo(memChunk : limit(1,.001)) * memSeconds * ma.SR;
+        readingRate = ma.SR / readingLength;
+        rIdx = os.phasor(readingLength, readingRate * si.smoo(ratio));
+    };
 */
 /*
 sampler(memBuffer, maxChunk, ratio, x) =
-it.frwtable( tabInt, 192000 * (memBuffer), .0, 
- ba.period(memBuffer * ma.SR), x, rIdx )
- with {
- //clip the smallest chunk
- memChunk(maxChunk) = ( limit(1,.001,maxChunk) ) * memBuffer * ma.SR;
- rIdx = os.phasor(memChunk(maxChunk), 
- (ma.SR / memChunk (maxChunk)) * ratio);
- };
+it.frwtable(  tabInt, 192000 * (memBuffer), .0, 
+              ba.period(memBuffer * ma.SR), x, rIdx )
+    with {
+    //clip the smallest chunk
+    memChunk(maxChunk) = ( limit(1,.001,maxChunk) ) * memBuffer * ma.SR;
+    rIdx =  os.phasor(memChunk(maxChunk), 
+            (ma.SR / memChunk  (maxChunk)) * ratio);
+    };
 // TEST
 //process = sampler(1, -1, 1);
 */
 sampler(bufferLength, memChunk, ratio, x) = y
- with {
- y = it.frwtable(3, L, .0, writePtr, x, readPtr * memChunkLock * L) * trapezoidal(.95, readPtr)
- with {
- // memChunkLimited = limit(.900, .100, memChunk);
- memChunkLimited = max(.01, min(1.0, memChunk));
- L = bufferLength * SampleRate; // hard-coded: change this to match your samplerate
- writePtr = ba.period(L);
- readPtr = phasor : _ , !;
- memChunkLock = phasor : ! , _;
- phasor = loop ~ si.bus(3) : _ , ! , _
- with {
- loop(phState, incrState, chunkLenState) = ph , incr , chunkLen
- with {
- ph = ba.if(phState < 1.0, phState + incrState, 0.0);
- unlock = phState < phState' + 1 - 1';
- incr = ba.if( unlock, 
- ma.T * max(.1, min(10.0, ratio)) / 
- max(ma.T, (memChunkLimited * bufferLength)), 
- incrState);
- chunkLen = ba.if(unlock, memChunkLimited, chunkLenState);
- };
- };
- trapezoidal(width, ph) = 
- min(1.0, 
- abs(ma.decimal(ph + .5) * 2.0 - 1.0) / 
- max(ma.EPSILON, 1.0 - width));
- };
- };
-//process = sampleRead( 1, hslider("chnk",0,0,1,.001), 
- //hslider("rati",1,0,2,.001), os.osc(200)) <: _,_;
+    with {
+        y = it.frwtable(3, L, .0, writePtr, x, readPtr * memChunkLock * L) * trapezoidal(.95, readPtr)
+            with {
+                memChunkLimited = limit(.900, .100, memChunk);
+                L = bufferLength * SampleRate; // hard-coded: change this to match your samplerate
+                writePtr = ba.period(L);
+                readPtr = phasor : _ , !;
+                memChunkLock = phasor : ! , _;
+                phasor = loop ~ si.bus(3) : _ , ! , _
+                    with {
+                        loop(phState, incrState, chunkLenState) = ph , incr , chunkLen
+                            with {
+                                ph = ba.if(phState < 1.0, phState + incrState, 0.0);
+                                unlock = phState < phState' + 1 - 1';
+                                incr = ba.if(   unlock, 
+                                                ma.T * max(.1, min(10.0, ratio)) / 
+                                                    max(ma.T, (memChunkLimited * bufferLength)), 
+                                                incrState);
+                                chunkLen = ba.if(unlock, memChunkLimited, chunkLenState);
+                            };
+                    };
+                trapezoidal(width, ph) = 
+                    min(1.0, 
+                        abs(ma.decimal(ph + .5) * 2.0 - 1.0) / 
+                            max(ma.EPSILON, 1.0 - width));
+            };
+    };
+//process = sampleRead(   1, hslider("chnk",0,0,1,.001), 
+                        //hslider("rati",1,0,2,.001), os.osc(200)) <: _,_;
 //-------------------------------------------------------------------- DELAY ---
 // FB delay line - w min and max
 delayfb(seconds,fb,x) = x:(+ : de.delay(varMax, ba.sec2samp(seconds)-1 ))~*(fb);
@@ -548,9 +551,9 @@ delayfb(seconds,fb,x) = x:(+ : de.delay(varMax, ba.sec2samp(seconds)-1 ))~*(fb);
 // output range is [0, 1]
 /*
 movingAverage(seconds, x) = x - (x @ N) : fi.pole(1.0) / N
- with {
- N = seconds * ma.SR;
- };
+    with {
+        N = seconds * ma.SR;
+    };
 RMSRectangular(seconds, x) = sqrt(max(0, movingAverage(seconds, x * x)));
 */
 integrator(seconds, x) = an.abs_envelope_tau(limit(1000,.001,seconds), x);
@@ -563,64 +566,64 @@ integrator(seconds, x) = an.abs_envelope_tau(limit(1000,.001,seconds), x);
 // end of the previous frame
 /*
 peakHolder(secondsPeriod, x) = y
- letrec {
- 'y = ba.if(reset, abs(x), max(y, abs(x)));
- }
- with {
- reset = os.phasor(1, 1.0 / secondsPeriod) : \(x).(x < x');
- };
+    letrec {
+        'y = ba.if(reset, abs(x), max(y, abs(x)));
+    }
+        with {
+            reset = os.phasor(1, 1.0 / secondsPeriod) : \(x).(x < x');
+        };
 */
 // holdTime in Seconds
 /*
 peakHolder(holdTime, x) = loop ~ si.bus(2) : ! , _
- with {
- loop(timerState, outState) = timer , output
- with {
- isNewPeak = abs(x) >= outState;
- isTimeOut = timerState >= (holdTime * ma.SR - 1);
- bypass = isNewPeak | isTimeOut;
- timer = ba.if(bypass, 0, timerState + 1);
- output = ba.if(bypass, abs(x), outState);
- };
- };
+    with {
+        loop(timerState, outState) = timer , output
+            with {
+                isNewPeak = abs(x) >= outState;
+                isTimeOut = timerState >= (holdTime * ma.SR - 1);
+                bypass = isNewPeak | isTimeOut;
+                timer = ba.if(bypass, 0, timerState + 1);
+                output = ba.if(bypass, abs(x), outState);
+            };
+    };
 */
 /*
 localmax(seconds, y) = y : loop : sah
 with{
- loop(x) = \(FB).((FB , abs(x)) : max)~ * (1-trig);
- sah(x) = \(FB).( selector(trig, FB, x') )~ _
- with{
- selector(sel,x,y) = ( x * (1-sel) + y * (sel) );
- };
- ph = os.phasor(1, 1/seconds);
- trig = ph < ph';
- };
+    loop(x) = \(FB).((FB , abs(x)) : max)~ * (1-trig);
+    sah(x) = \(FB).( selector(trig, FB, x') )~ _
+        with{
+            selector(sel,x,y) = ( x * (1-sel) + y * (sel) );
+        };
+    ph = os.phasor(1, 1/seconds);
+    trig = ph < ph';
+    };
 
 localMax(seconds, x) = loop ~ si.bus(3) : _ , ! , !
- with {
- loop(yState, timerState, peakState) = y , timer , peak
- with {
- timeInSamples = seconds * ma.SR;
- reset = timerState >= (timeInSamples - 1);
- timer = ba.if(reset, 1, timerState + 1);
- peak = max(abs(x), peakState * (1.0 - reset));
- y = ba.if(reset, peak', yState);
- };
- };
+    with {
+        loop(yState, timerState, peakState) = y , timer , peak
+            with {
+                timeInSamples = seconds * ma.SR;
+                reset = timerState >= (timeInSamples - 1);
+                timer = ba.if(reset, 1, timerState + 1);
+                peak = max(abs(x), peakState * (1.0 - reset));
+                y = ba.if(reset, peak', yState);
+            };
+    };
 
 process = os.osc(.1234) : localMax(1);
 */
 localMax(seconds, x) = loop ~ si.bus(4) : _ , ! , ! , !
- with {
- loop(yState, timerState, peakState, timeInSamplesState) = y , timer , peak , timeInSamples
- with {
- timeInSamples = ba.if(reset + 1 - 1', seconds * ma.SR, timeInSamplesState);
- reset = timerState >= (timeInSamplesState - 1);
- timer = ba.if(reset, 1, timerState + 1);
- peak = max(abs(x), peakState * (1.0 - reset));
- y = ba.if(reset, peak', yState);
- };
- };
+    with {
+        loop(yState, timerState, peakState, timeInSamplesState) = y , timer , peak , timeInSamples
+            with {
+                timeInSamples = ba.if(reset + 1 - 1', seconds * ma.SR, timeInSamplesState);
+                reset = timerState >= (timeInSamplesState - 1);
+                timer = ba.if(reset, 1, timerState + 1);
+                peak = max(abs(x), peakState * (1.0 - reset));
+                y = ba.if(reset, peak', yState);
+            };
+    };
 //process = os.osc(.1245) : localMax(hslider("windowlocalM",-1,-1,8,.001));
 localmax(resetPeriod, x) = localMax(limit(1000,0,resetPeriod), x);
 
@@ -634,18 +637,18 @@ triangleWave(f) = triangularFunc(os.phasor(1,f));
 // http://www.willpirkle.com/Downloads/AN-4VirtualAnalogFilters.2.0.pdf
 // OnePoleTPT filter function
 onePoleTPT(cf, x) = loop ~ _ : ! , si.bus(3)
- with {
- g = tan(cf * ma.PI * (1/ma.SR));
- G = g / (1.0 + g);
- loop(s) = u , lp , hp , ap
- with {
- v = (x - s) * G;
- u = v + lp;
- lp = v + s;
- hp = x - lp;
- ap = lp - hp;
- };
- };
+    with {
+        g = tan(cf * ma.PI * (1/ma.SR));
+        G = g / (1.0 + g);
+        loop(s) = u , lp , hp , ap
+            with {
+                v = (x - s) * G;
+                u = v + lp;
+                lp = v + s;
+                hp = x - lp;
+                ap = lp - hp;
+            };
+    };
 LPTPT(cf, x) = onePoleTPT(limit(20000,1.19209e-07,cf), x) : (_ , ! , !);
 HPTPT(cf, x) = onePoleTPT(limit(20000,1.19209e-07,cf), x) : (! , _ , !);
 // TEST
@@ -653,135 +656,229 @@ HPTPT(cf, x) = onePoleTPT(limit(20000,1.19209e-07,cf), x) : (! , _ , !);
 
 // SVFTPT filter function
 SVFTPT(K, Q, CF, x) = circuitout : !,!,_,_,_,_,_,_,_,_
- with{
- g = tan(CF * ma.PI / ma.SR);
- R = 1.0 / (2.0 * Q);
- G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
- G2 = 2.0 * R + g;
+    with{
+        g = tan(CF * ma.PI / ma.SR);
+        R = 1.0 / (2.0 * Q);
+        G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
+        G2 = 2.0 * R + g;
 
- circuit(s1, s2) = u1 , u2 , lp , hp , bp, notch, apf, ubp, peak, bshelf
- with{
- hp = (x - s1 * G2 - s2) * G1;
- v1 = hp * g;
- bp = s1 + v1;
- v2 = bp * g;
- lp = s2 + v2;
- u1 = v1 + bp;
- u2 = v2 + lp;
- notch = x - ((2*R)*bp);
- apf = x - ((4*R)*bp);
- ubp = ((2*R)*bp);
- peak = lp -hp;
- bshelf = x + (((2*K)*R)*bp);
- };
- // choose the output from the SVF Filter (ex. bshelf)
- circuitout = circuit ~ si.bus(2);
- };
+        circuit(s1, s2) = u1 , u2 , lp , hp , bp, notch, apf, ubp, peak, bshelf
+            with{
+                hp = (x - s1 * G2 - s2) * G1;
+                v1 = hp * g;
+                bp = s1 + v1;
+                v2 = bp * g;
+                lp = s2 + v2;
+                u1 = v1 + bp;
+                u2 = v2 + lp;
+                notch = x - ((2*R)*bp);
+                apf = x - ((4*R)*bp);
+                ubp = ((2*R)*bp);
+                peak = lp -hp;
+                bshelf = x + (((2*K)*R)*bp);
+            };
+    // choose the output from the SVF Filter (ex. bshelf)
+    circuitout = circuit ~ si.bus(2);
+    };
 // Outs = (lp , hp , bp, notch, apf, ubp, peak, bshelf)
 // SVFTPT(K, Q, CF, x) = (Filter-K, Filter-Q, Frequency Cut)
 // Filters Bank
 LPSVF(Q, CF, x) = SVFTPT(0, Q, 
- limit(20000,1.19209e-07,CF), x) : _,!,!,!,!,!,!,!;
+                            limit(20000,1.19209e-07,CF), x) : _,!,!,!,!,!,!,!;
 HPSVF(Q, CF, x) = SVFTPT(0, Q, 
- limit(20000,1.19209e-07,CF), x) : !,_,!,!,!,!,!,!;
+                            limit(20000,1.19209e-07,CF), x) : !,_,!,!,!,!,!,!;
 //process = (-1, -10000, no.noise) <: LPSVF, HPSVF;
-BPsvftpt(BW, CF, x) = SVFTPT(0 : ba.db2linear, ql, cfl, x ) : !,!,!,!,!,_,!,!
- with{
- cfl = limit(20000,1.19209e-07,CF);
- bwl = limit(20000,1.19209e-07,BW);
- ql = cfl / bwl;
- };
+BPsvftpt(BW, CF, x) = SVFTPT(0 : ba.db2linear, ql, cfl, x )   : !,!,!,!,!,_,!,!
+    with{
+        cfl = limit(20000,1.19209e-07,CF);
+        bwl = limit(20000,1.19209e-07,BW);
+        ql  = cfl / bwl;
+        };
 // TEST
 //process = (1, 1000, no.noise) : BPsvftpt;
 /*
-BPsvftpt(bw, fc, x) = x : fi.bandpass(1, 
- fcn(fc,bw)-(bw/2) : max(1, min(20000)),
- fcn(fc,bw)+(bw/2) : max(1, min(20000)))
- with{
- fcn(fc,bw) = fc : max(bw/2);
- };
-*/ 
+BPsvftpt(bw, fc, x) =   x : fi.bandpass(1,    
+                                fcn(fc,bw)-(bw/2) : max(1, min(20000)),
+                                fcn(fc,bw)+(bw/2) : max(1, min(20000)))
+                                    with{
+                                        fcn(fc,bw) = fc : max(bw/2);
+                                        };
+*/          
 
 // Butterworth
 butterworthQ(order, stage) = qFactor(order % 2)
- with {
- qFactor(0) = 1.0 / (2.0 * cos(((2.0 * stage + 1) *
- (ma.PI / (order * 2.0)))));
- qFactor(1) = 1.0 / (2.0 * cos(((stage + 1) * (ma.PI / order))));
- };
+    with {
+        qFactor(0) = 1.0 / (2.0 * cos(((2.0 * stage + 1) *
+        (ma.PI / (order * 2.0)))));
+        qFactor(1) = 1.0 / (2.0 * cos(((stage + 1) * (ma.PI / order))));
+    };
 
 LPButterworthN(1, cf, x) = LPTPT(cf, x);
 LPButterworthN(N, cf, x) = cascade(N % 2)
- with {
- cascade(0) = x : seq(i, N / 2, LPSVF(butterworthQ(N, i), cf));
- cascade(1) = x : LPTPT(cf) : seq(i, (N - 1) / 2,
- LPSVF(butterworthQ(N, i), cf));
- };
+    with {
+        cascade(0) = x : seq(i, N / 2, LPSVF(butterworthQ(N, i), cf));
+        cascade(1) = x : LPTPT(cf) : seq(i, (N - 1) / 2,
+        LPSVF(butterworthQ(N, i), cf));
+    };
 HPButterworthN(1, cf, x) = HPTPT(cf, x);
 HPButterworthN(N, cf, x) = cascade(N % 2)
- with {
- cascade(0) = x : seq(i, N / 2, HPSVF(butterworthQ(N, i), cf));
- cascade(1) = x : HPTPT(cf) : seq(i, (N - 1) /
- 2, HPSVF(butterworthQ(N, i), cf));
- };
-//process = HPButterworthN(10, -1000, no.noise), 
- // LPButterworthN(10, -1000, no.noise);
+    with {
+        cascade(0) = x : seq(i, N / 2, HPSVF(butterworthQ(N, i), cf));
+        cascade(1) = x : HPTPT(cf) : seq(i, (N - 1) /
+        2, HPSVF(butterworthQ(N, i), cf));
+    };
+//process =   HPButterworthN(10, -1000, no.noise), 
+        //    LPButterworthN(10, -1000, no.noise);
 //------------------------------------------------------------------------ NOISE
 // noise generated with prime numbers and index
 noise(seed) = (+(primeNumbers(seed + 1)) ~ *(1103515245)) / 2147483647;
 
 //-------------------------------------------------------- GRANULAR SAMPLING ---
+grain(seed,var1,timeIndex,memWriteDel,cntrlLev,divDur,x) =
+hann(readingSegment) * buffer(bufferSize, readPtr, x) : vdelay
+    with{
+        // density
+        _grainRate = (cntrlLev*(100-1))+1;
+        // target grain duration in seconds
+        _grainDuration = 0.023 + ((1 - memWriteDel) / divDur);
+        // target grain position in the buffer
+        _grainPosition = ((timeIndex)+1)/2;
+        // make sure to have decorrelated noises
+        // grain.dur.jitter: 0.1 - constant value
+        durationJitter = noise(2 * seed) * .1 + .1;
+        positionJitter = noise(2 * seed + 1) * (1 - memWriteDel) / 100;
+
+        // buffer size
+        bufferSize = var1 * SampleRate;
+        // hann window
+        hann(x) = sin(ma.PI * x) ^ 2.0;
+
+        // a phasor that read new params only when: y_1 < y_2
+        phasorLocking = loop ~ _
+            with {
+                loop(y_1) = ph , unlock
+                    with{
+                        y_2 = y_1';
+                        ph = os.phasor(1, ba.sAndH(unlock, _grainRate));
+                        unlock = (y_1 < y_2) + 1 - 1';
+                    };
+            };
+
+        // two outputs of the phasor: phasor, trigger(y_1<y_2)
+        phasor = phasorLocking : _ , !;
+        unlocking = phasorLocking : ! , _;
+
+        // new param with lock function based on the phasor
+        lock(param) = ba.sAndH(unlocking, param);
+
+        // TO DO: wrap & receive param from AE2
+        grainPosition = lock(_grainPosition * positionJitter);
+        // TO DO: wrap & receive param from AE2
+        grainRate = lock(_grainRate);
+        // TO DO: wrap & receive param from AE2
+        grainDuration = lock(_grainDuration * durationJitter);
+
+        // maximum allowed grain duration in seconds
+        maxGrainDuration = 1.0 / grainRate;
+        // phase segment multiplication factor to complete a 
+        // Hann cycle in the target duration
+        phasorSlopeFactor = maxGrainDuration / 
+                            min(maxGrainDuration, grainDuration);
+        readingSegment = min(1.0, phasor * phasorSlopeFactor);
+
+        // read pointer
+        readPtr = grainPosition * bufferSize + readingSegment
+            * (ma.SR / (grainRate * phasorSlopeFactor));
+
+        // decorrelation delay. Instead of 1 control w: 
+        // hslider("decorrelation", 1, 0, 1, .001)
+        noisePadding = 1 * lock(noise(seed+3)) : abs;
+            vdelay(x) = x : de.sdelay(ma.SR, 1024, noisePadding * ma.SR);
+
+        buffer(length, readPtr, x) = it.frwtable( 3, bufferSize, .0, 
+                                                  writePtr, x, readPtr  )
+            with{
+                writePtr = ba.period(length);
+            };
+    };
+
+// par (how much grains/instances do you want?)
+grainN(voices,var1,timeIndex,memWriteDel,cntrlLev,divDur,x) =
+    par(i, voices, grain(   i,
+                            var1,
+                            timeIndex,
+                            memWriteDel,
+                            cntrlLev,
+                            divDur,
+                            (x/voices)
+                        )
+        );
+granular_sampling(nVoices,var1,timeIndex,memWriteDel,cntrlLev,divDur,x) =
+    grainN(nVoices,var1,timeIndex,memWriteDel,cntrlLev,divDur,x/nVoices) :> _ ;
+
+// TEST
+// position
+timeIndexG = hslider("timeIndexG", 0, -1, 1, .001); 
+// position jitter
+memWriteDelG = hslider("memWriteDelG", 0, 0, 1, .001);
+// duration
+cntrLevG = hslider("cntrLevG", 0, 0, 1, .001);
+//process = os.osc(1000) : 
+    //granular_sampling(10,var1,timeIndexG,memWriteDelG,cntrLevG,21);
+
+
+/*
+L = 10;
 grain(L, position, duration, x, trigger) = hann(phase) * buffer(readPtr, x)
- with {
- maxLength = 1920000;
- length = L * ma.SR;
- hann(ph) = sin(ma.PI * ph) ^ 2.0;
- lineSegment = loop ~ si.bus(2) : _ , ! , _
- with {
- loop(yState, incrementState) = y , increment , ready
- with {
- ready = ((yState == 0.0) | (yState == 1.0)) & trigger;
- y = ba.if(ready, increment, min(1.0, yState + increment));
- increment = ba.if(ready, ma.T / max(ma.T, duration), incrementState);
- };
- };
- phase = lineSegment : _ , !;
- unlocking = lineSegment : ! , _;
- lock(param) = ba.sAndH(unlocking, param); 
- grainPosition = lock(position);
- grainDuration = lock(duration);
- readPtr = grainPosition * length + phase * grainDuration * ma.SR;
- buffer(readPtr, x) = it.frwtable(3, maxLength, .0, writePtr, x, readPtrWrapped)
- with {
- writePtr = ba.period(length);
- readPtrWrapped = ma.modulo(readPtr, length);
- };
- };
+    with {
+        maxLength = 1920000;
+        length = L * ma.SR;
+        hann(ph) = sin(ma.PI * ph) ^ 2.0;
+        lineSegment = loop ~ si.bus(2) : _ , ! , _
+            with {
+                loop(yState, incrementState) = y , increment , ready
+                    with {
+                        ready = ((yState == 0.0) | (yState == 1.0)) & trigger;
+                        y = ba.if(ready, increment, min(1.0, yState + increment));
+                        increment = ba.if(ready, ma.T / max(ma.T, duration), incrementState);
+                    };
+            };
+        phase = lineSegment : _ , !;
+        unlocking = lineSegment : ! , _;
+        lock(param) = ba.sAndH(unlocking, param);   
+        grainPosition = lock(position);
+        grainWarp = lock(warp);
+        grainDuration = lock(duration);
+        readPtr = grainPosition * length + phase * grainDuration * ma.SR;
+        buffer(readPtr, x) = it.frwtable(3, maxLength, .0, writePtr, x, readPtrWrapped)
+            with {
+                writePtr = ba.period(length);
+                readPtrWrapped = ma.modulo(readPtr, length);
+            };
+    };
 
 // works for N >= 2
-triggerArray(N, rate) = loop ~ si.bus(3) : (! , ! , _) <: par(i, N, == (i)) : par(i, N, \(x).(x > x'))
- with {
- loop(incrState, phState, counterState) = incr , ph , counter
- with {
- init = 1 - 1';
- trigger = (phState < phState') + init;
- incr = ba.if(trigger, rate * ma.T, incrState);
- ph = ma.frac(incr + phState);
- counter = (trigger + counterState) % N;
- };
- };
-grainN(voices, L, position, rate, duration, x) = triggerArray(voices, rate) : par(i, voices, grain(L, position, duration, x));
+triggerArray(N, rate) = loop ~ si.bus(3) : (! , ! , _) <: par(i, N,  == (i)) : par(i, N, \(x).(x > x'))
+    with {
+        loop(incrState, phState, counterState) = incr , ph , counter
+            with {
+                init = 1 - 1';
+                trigger = (phState < phState') + init;
+                incr = ba.if(trigger, rate * ma.T, incrState);
+                ph = ma.frac(incr + phState);
+                counter = (trigger + counterState) % N;
+            };
+    };
+grainN(voices, position, rate, duration, x) = triggerArray(voices, rate) : par(i, voices, grain(L, position, duration, x));
 
-// var1 = 20;
+voices = 4;
+x = os.osc(1000);
 
-granular_sampling(var1, timeIndex, memWriteDel, cntrlLev, divDur, x) = 
- grainN(8, var1, position, rate, duration, x) :> /(8)
- with {
- rnd = no.noise;
- memPointerJitter = rnd * (1.0 - memWriteDel) * .01;
- position = timeIndex * (1.0 - ((1.0 - memWriteDel) * .01)) + memPointerJitter;
- density = 1.0 - cntrlLev;
- rate = 50 ^ (density * 2.0 - 1.0);
- grainDuration = .023 + (1.0 - memWriteDel) / divDur;
- duration = grainDuration + grainDuration * .1 * rnd;
- };
+rnd = (no.noise + 1.0) /  2.0; 
+
+_grainRate = 10 + 1000 * rnd;
+_grainDuration = .01 + .1 * rnd;
+_grainPosition = rnd;
+
+process = grainN(voices, _grainPosition, _grainRate, _grainDuration) :> si.bus(2);
+*/
