@@ -126,19 +126,15 @@ with{
                         // LIMIT - max - min
                         limit(1, 0);
 
-    timeIndex1 = triangleWave( 1 / (var1 * 2) ) : \(x).( (x - 2) * 0.5 ) : 
-        // LIMIT - max - min
-        limit(1, -1);
+    timeIndex1 = triangleWave(1/(var1 * 2)) : \(x).((x - 2) * 0.5);
 
-    timeIndex2 = triangleWave( 1 / (var1 * 2) ) : \(x).( (x + 1) * 0.5 ) : 
-        // LIMIT - max - min
-        limit(1, -1);
+    timeIndex2 = triangleWave(1/(var1 * 2)) : \(x).((x + 1) * 0.5);
 
-    triangle1 = triangleWave( 1 / (var1 * 6) ) * memWriteLev;
+    triangle1 = triangleWave(1/(var1 * 6)) * memWriteLev;
 
-    triangle2 = triangleWave( var1 * (1 - cntrlMain) );
+    triangle2 = triangleWave(var1 * (1 - cntrlMain));
 
-    triangle3 = triangleWave( 1 / var1 );
+    triangle3 = triangleWave(1 / var1);
 };
 
 signalflow2a( mic1, mic2, mic3, mic4,
