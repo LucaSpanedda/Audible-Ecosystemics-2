@@ -15,7 +15,7 @@ import("aetest.lib");
 // PERFORMANCE SYSTEM VARIABLES
 SampleRate = 44100;
 var1 = 20;
-var2 = 2000;
+var2 = 100;
 var3 = 0.5;
 var4 = 20;
 
@@ -50,18 +50,18 @@ with {
 
     SenstoExt = (map6sumx6, localMaxDiff) : 
         localmax <: _ , (_ : delayfb(12, 0)) : + : * (.5) : 
-            LPButterworthN(1, .5) ;
+            LP1(.5) ;
 
-    diffHL =    ((mic3 + mic4) : HPButterworthN(3, var2) : integrator(.05)) ,
-                ((mic3 + mic4) : LPButterworthN(3, var2) : integrator(.10)) :
+    diffHL =    ((mic3 + mic4) : HP3(var2) : integrator(.05)) ,
+                ((mic3 + mic4) : LP3(var2) : integrator(.10)) :
                     \(x, y).(x - y) * 
                         (1 - SenstoExt) : delayfb(.01, .995) : 
-                            LPButterworthN(5, 25.0) : \(x).(.5 + x * .5) : 
+                            LP5(25) : \(x).(.5 + x * .5) : 
                                 // LIMIT - max - min
                                 limit(1, 0);
 
     memWriteLev = (mic3 + mic4) : integrator(.1) : delayfb(.01, .9) :
-        LPButterworthN(5, 25) : \(x).(1 - (x * x)) : 
+        LP5(25) : \(x).(1 - (x * x)) : 
             // LIMIT - max - min
             limit(1, 0);
 
@@ -74,7 +74,7 @@ with {
         limit(1, 0);
 
     cntrlMain = (mic3 + mic4) * SenstoExt : integrator(.01) : 
-        delayfb(.01, .995) : LPButterworthN(5, 25) : 
+        delayfb(.01, .995) : LP5(25) : 
             // LIMIT - max - min
             limit(1, 0);
 
@@ -93,8 +93,8 @@ with {
 
 signalflow1b( grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3
 with {
-    cntrlMic(x) = x : HPButterworthN(1, 50) : LPButterworthN(1, 6000) : 
-        integrator(.01) : delayfb(.01, .995) : LPButterworthN(5, .5);
+    cntrlMic(x) = x : HP1(50) : LP1(6000) : 
+        integrator(.01) : delayfb(.01, .995) : LP5(.5);
 
     cntrlMic1 = mic1 : cntrlMic : 
         // LIMIT - max - min
@@ -106,7 +106,7 @@ with {
 
     directLevel =
         (grainOut1 + grainOut2) : integrator(.01) : delayfb(.01, .97) : 
-            LPButterworthN(5, .5) <: 
+            LP5(.5) <: 
                  _ , 
                 (_ : delayfb(var1 * 2, (1 - var3) * 0.5)) : + : 
                     \(x).(1 - x * .5) : 
@@ -126,20 +126,20 @@ with {
 
 signalflow2a( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3 ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7
 with {
-    micIN1 = mic1 : HPButterworthN(1, 50) : LPButterworthN(1, 6000) * 
+    micIN1 = mic1 : HP1(50) : LP1(6000) * 
         (1 - cntrlMic1);
 
-    micIN2 = mic2 : HPButterworthN(1, 50) : LPButterworthN(1, 6000) * 
+    micIN2 = mic2 : HP1(50) : LP1(6000) * 
         (1 - cntrlMic2);
 
     SRSect1(x) = x : sampler(var1, (1 - memWriteDel2), (var2 + (diffHL * 1000)) / 261) : 
-        HPButterworthN(4, 50) : delayfb(var1 / 2, 0);
+        HP4(50) : delayfb(var1 / 2, 0);
 
     SRSect2(x) = x : sampler(var1, (memWriteLev + memWriteDel1) / 2, (290 - (diffHL * 90)) / 261) : 
-        HPButterworthN(4, 50) : delayfb(var1, 0);
+        HP4(50) : delayfb(var1, 0);
 
     SRSect3(x) = x : sampler(var1, (1 - memWriteDel1), ((var2 * 2) - (diffHL * 1000)) / 261) : 
-        HPButterworthN(4, 50);
+        HP4(50);
 
     SRSectBP1(x) = x : SRSect3 : BPsvftpt(diffHL * 400, (var2 / 2) * memWriteDel2);
 
@@ -181,10 +181,10 @@ with {
         memWriteLev * (1-triangle2) * directLevel;
 
     sig5 = SampleWriteLoop : \(A,B,C,D,E).( C ) :
-        HPButterworthN(4, 50) : delayfb(var1 / 3, 0);
+        HP4(50) : delayfb(var1 / 3, 0);
 
     sig6 = SampleWriteLoop : \(A,B,C,D,E).( D ) :
-        HPButterworthN(4, 50) : delayfb(var1 / 2.5, 0);
+        HP4(50) : delayfb(var1 / 2.5, 0);
 
     sig7 = SampleWriteLoop : \(A,B,C,D,E).( E ) : delayfb(var1 / 1.5, 0) * 
         directLevel;
