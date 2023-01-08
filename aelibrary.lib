@@ -160,6 +160,18 @@ with {
 //process = HPButterworthN(10, -1000, no.noise), 
  // LPButterworthN(10, -1000, no.noise);
 
+// Order Aproximations filters - Outs
+LP1(CF, x) = x : LPTPT(CF);
+HP1(CF, x) = x : HPTPT(CF);
+LP2(CF, x) = x : LPTPT(CF) : LPTPT(CF);
+HP2(CF, x) = x : HPTPT(CF) : HPTPT(CF);
+LP3(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+HP3(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+LP4(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+HP4(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+LP5(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+HP5(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+
 //-------------------------------------------------------- GRANULAR SAMPLING ---
 grain(L, position, duration, x, trigger) = hann(phase) * buffer(readPtr, x)
 with {
