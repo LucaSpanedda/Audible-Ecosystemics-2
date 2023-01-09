@@ -35,14 +35,14 @@ with{
 //---------------------------------------------------------------- SAMPLEREAD --
 sampler(bufferLength, memChunk, ratio, x) = y
 with {
-    y = it.frwtable(3, L, .0, writePtr, x, readPtrLen) * trapWin(100) * zeroChunk : fi.dcblocker
+    y = it.frwtable(3, L, .0, writePtr, x, readPtrLen) * trapWin(200) * zeroChunk : fi.dcblocker
     with {
         L = bufferLength * SampleRate; // hard-coded: change this to match your samplerate
         writePtr = + (1') %(L) ~ _;
         readPtr =  + (1' * (1 / max(ma.EPSILON, memChunk)) * ratio) %(L) ~ _;
         readPtrLen = readPtr * memChunk;
         zeroChunk = (memChunk > ma.EPSILON);
-        trapWin(fadeLenSamp) = readPtrLen - winLenSamp / 2 : abs / fadeLenSamp : min(1)
+        trapWin(fadeLenSamp) = readPtrLen - winLenSamp : abs / fadeLenSamp : min(1)
             with {
                 winLenSamp = max(1, memChunk * L);
             };
