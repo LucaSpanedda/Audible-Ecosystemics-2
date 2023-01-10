@@ -33,22 +33,18 @@ with{
 };
 
 //---------------------------------------------------------------- SAMPLEREAD --
-sampler(bufferLength, memChunk, ratio, x) = y
-with {
-    y = it.frwtable(3, L, .0, writePtr, x, readPtrLen) * trapWin(200) * zeroChunk : fi.dcblocker
+sampler(lengthSec, memChunk, ratio, x) = it.frwtable(3, bufferLen, .0, writePtr, x, readPtr) * window
     with {
-        L = bufferLength * SampleRate; // hard-coded: change this to match your samplerate
-        writePtr = + (1') %(L) ~ _;
-        readPtr =  + (1' * (1 / max(ma.EPSILON, memChunk)) * ratio) %(L) ~ _;
-        readPtrLen = readPtr * memChunk;
-        zeroChunk = (memChunk > ma.EPSILON);
-        trapWin(fadeLenSamp) = readPtrLen - winLenSamp : abs / fadeLenSamp : min(1)
-            with {
-                winLenSamp = max(1, memChunk * L);
+        bufferLen = lengthSec * SampleRate;
+        writePtr = ba.period(bufferLen);
+        grainLen = max(1, ba.if(writePtr > memChunk * bufferLen, memChunk * bufferLen, 1));
+        readPtr = y
+            letrec {
+                'y = (ratio + y) % grainLen;
             };
+        window = min(1, abs(((readPtr + grainLen / 2) % grainLen) - grainLen / 2) / 400);
     };
-};
-// process = sampler(1, (hslider("chnk",0.5,0,1,.001)), (hslider("rati",1,0,2,.001)), os.osc(400));
+// process = sampler(4, hslider("memChunk", 0.05, 0, 1, .001), hslider("ratio", 10, .1, 10, .001), os.osc(100)) <: _, _;
 
 //--------------------------------------------------------------- INTEGRATOR ---
 integrator(seconds, x) = an.abs_envelope_tau(limit(1000,.001,seconds), x);
