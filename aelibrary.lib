@@ -35,16 +35,17 @@ with{
 //---------------------------------------------------------------- SAMPLEREAD --
 sampler(lengthSec, memChunk, ratio, x) = it.frwtable(3, bufferLen, .0, writePtr, x, readPtr) * window
     with {
+        memChunkLimited = max(0.010, min(1, memChunk));
         bufferLen = lengthSec * SampleRate;
         writePtr = ba.period(bufferLen);
-        grainLen = max(1, ba.if(writePtr > memChunk * bufferLen, memChunk * bufferLen, 1));
+        grainLen = max(1, ba.if(writePtr > memChunkLimited * bufferLen, memChunkLimited * bufferLen, 1));
         readPtr = y
             letrec {
                 'y = (ratio + y) % grainLen;
             };
-        window = min(1, abs(((readPtr + grainLen / 2) % grainLen) - grainLen / 2) / 400);
+        window = min(1, abs(((readPtr + grainLen / 2) % grainLen) - grainLen / 2) / 200);
     };
-// process = sampler(4, hslider("memChunk", 0.05, 0, 1, .001), hslider("ratio", 10, .1, 10, .001), os.osc(100)) <: _, _;
+// process = sampler(4, hslider("memChunkLimited", 0.05, 0, 1, .001), hslider("ratio", 10, .1, 10, .001), os.osc(100)) <: _, _;
 
 //--------------------------------------------------------------- INTEGRATOR ---
 integrator(seconds, x) = an.abs_envelope_tau(limit(1000,.001,seconds), x);
