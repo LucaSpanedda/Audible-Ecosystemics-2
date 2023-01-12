@@ -93,8 +93,13 @@ with {
 
 signalflow1b( grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3
 with {
-    cntrlMic(x) = x : HP1(50) : LP1(6000) : 
-        integrator(.01) : delayfb(.01, .995) : LP5(.5);
+    // cntrlMic - original version
+    // cntrlMic(x) = x : HP1(50) : LP1(6000) : 
+    //     integrator(.01) : delayfb(.01, .995) : LP5(.5);
+
+    // cntrlMic - alternative version
+    cntrlMic(x) = x : HP2(50) : LP1(6000) :
+        integrator(.01) : delayfb(.01, .995) : LP5(.04);
 
     cntrlMic1 = mic1 : cntrlMic : 
         // LIMIT - max - min
