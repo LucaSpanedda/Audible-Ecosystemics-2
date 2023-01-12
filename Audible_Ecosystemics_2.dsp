@@ -27,7 +27,7 @@ var4 = 20;
 
 // MAIN SYSTEM FUNCTION
 // process = TEST_Osc_variable <: TEST_12Micto1234Mics_Direct : 
-process = TEST_12Micto1234Mics_Mixer : Inputs_Mixer :
+process = TEST_12Micto1234Mics_Mixer :
     (signalflow1a : signalflow1b : signalflow2a : signalflow2b : signalflow3) ~ si.bus(2) :
         ( 
           ( par(i, 2, hgroup("GrainOut", inspect(i, -1, 1)) ) : si.block(2) ),
@@ -36,32 +36,34 @@ process = TEST_12Micto1234Mics_Mixer : Inputs_Mixer :
             par(i, 8, hgroup("Signal Flow 1a", inspect(i, -1, 1))),
             par(i, 8, hgroup("Signal Flow 1b", inspect(i, -1, 1))),
             par(i, 8, hgroup("Signal Flow 2a", inspect(i, -1, 1)))    
-        ) : (Outputs_Mixer, si.bus(24));
+        );
 
 
 signalflow1a( grainOut1, grainOut2, mic1, mic2, mic3, mic4 ) = grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain
 with {
-    map6sumx6 = (mic3 : integrator(.01) : delayfb(.01, .95)) +
-                (mic4 : integrator(.01) : delayfb(.01, .95)) : 
+    Mic_1A_1 = hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A_1(mic3) ) );
+    Mic_1A_2 = hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A_2(mic4) ) );
+    map6sumx6 = (Mic_1A_1 : integrator(.01) : delayfb(.01, .95)) +
+                (Mic_1A_2 : integrator(.01) : delayfb(.01, .95)) : 
                     \(x).(6 + x * 6);
 
-    localMaxDiff =  ((map6sumx6, mic3) : localmax) ,
-                    ((map6sumx6, mic4) : localmax) :
+    localMaxDiff =  ((map6sumx6, Mic_1A_1) : localmax) ,
+                    ((map6sumx6, Mic_1A_2) : localmax) :
                         \(x, y).(x - y);
 
     SenstoExt = (map6sumx6, localMaxDiff) : 
         localmax <: _ , (_ : delayfb(12, 0)) : + : * (.5) : 
             LP1(.5) ;
 
-    diffHL =    ((mic3 + mic4) : HP3(var2) : integrator(.05)) ,
-                ((mic3 + mic4) : LP3(var2) : integrator(.10)) :
+    diffHL =    ((Mic_1A_1 + Mic_1A_2) : HP3(var2) : integrator(.05)) ,
+                ((Mic_1A_1 + Mic_1A_2) : LP3(var2) : integrator(.10)) :
                     \(x, y).(x - y) * 
                         (1 - SenstoExt) : delayfb(.01, .995) : 
                             LP5(25) : \(x).(.5 + x * .5) : 
                                 // LIMIT - max - min
                                 limit(1, 0);
 
-    memWriteLev = (mic3 + mic4) : integrator(.1) : delayfb(.01, .9) :
+    memWriteLev = (Mic_1A_1 + Mic_1A_2) : integrator(.1) : delayfb(.01, .9) :
         LP5(25) : \(x).(1 - (x * x)) : 
             // LIMIT - max - min
             limit(1, 0);
@@ -74,7 +76,7 @@ with {
         // LIMIT - max - min
         limit(1, 0);
 
-    cntrlMain = (mic3 + mic4) * SenstoExt : integrator(.01) : 
+    cntrlMain = (Mic_1A_1 + Mic_1A_2) * SenstoExt : integrator(.01) : 
         delayfb(.01, .995) : LP5(25) : 
             // LIMIT - max - min
             limit(1, 0);
@@ -94,6 +96,8 @@ with {
 
 signalflow1b( grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3
 with {
+    Mic_1B_1 = hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B_1(mic1) ) );
+    Mic_1B_2 = hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B_2(mic2) ) );
     // cntrlMic - original version
     cntrlMic(x) = x : HP1(50) : LP1(6000) : 
         integrator(.01) : delayfb(.01, .995) : LP5(.5);
@@ -102,11 +106,11 @@ with {
     // cntrlMic(x) = x : HP2(50) : LP1(6000) :
     //     integrator(.01) : delayfb(.01, .995) : LP5(.04);
 
-    cntrlMic1 = mic1 : cntrlMic : 
+    cntrlMic1 = Mic_1B_1 : cntrlMic : 
         // LIMIT - max - min
         limit(1, 0);
 
-    cntrlMic2 = mic2 : cntrlMic : 
+    cntrlMic2 = Mic_1B_2 : cntrlMic : 
         // LIMIT - max - min
         limit(1, 0);
 
@@ -132,10 +136,12 @@ with {
 
 signalflow2a( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3 ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7
 with {
-    micIN1 = mic1 : HP1(50) : LP1(6000) * 
+    Mic_2A_1 = hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A_1(mic1) ) );
+    Mic_2A_2 = hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A_2(mic2) ) );
+    micIN1 = Mic_2A_1 : HP1(50) : LP1(6000) * 
         (1 - cntrlMic1);
 
-    micIN2 = mic2 : HP1(50) : LP1(6000) * 
+    micIN2 = Mic_2A_2 : HP1(50) : LP1(6000) * 
         (1 - cntrlMic2);
 
     SRSect1(x) = x : sampler(var1, (1 - memWriteDel2), (var2 + (diffHL * 1000)) / 261) : 
@@ -212,7 +218,7 @@ with {
               0,
               sig4,
               grainOut1 * (1 - memWriteLev) + grainOut2 * memWriteLev 
-        ) :> _ ;
+        ) :> _ : hgroup( "Mixer", hgroup( "Signal Flow 3", gainMic_2A_1 ) );
 
     out2 =  
         ( 
@@ -224,7 +230,7 @@ with {
               sig3,
               sig7,
               grainOut1 * memWriteLev + grainOut2 * (1 - memWriteLev) 
-        ) :> _ ;
+        ) :> _ : hgroup( "Mixer", hgroup( "Signal Flow 3", gainMic_2A_2 ) );
 };
 
 signalflow3( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7, grainOut1, grainOut2, out1, out2 ) = grainOut1, grainOut2, out1, out2, (out2 : delayfb((var4 / 2) / 344, 0)), (out1 : delayfb((var4 / 2) / 344, 0)), (out1 : delayfb(var4 / 344, 0)), (out2 : delayfb((var4 / 344), 0)), mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7;
