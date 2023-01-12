@@ -35,6 +35,14 @@ STt = checkbox("Sine Signal");
 TEST_Osc_variable = os.osc(STf) * STg * STt;
 //process = TEST_Osc_variable;
 
-
 TEST_12Micto1234Mics_Mixer = (_,_) : \(m1,m2).(m1, m2, m1, m2);
-//process = TEST_12Micto1234Mics_G;
+//process = TEST_12Micto1234Mics_Mixer;
+
+
+// SINE OUTPUT / INPUT MICS LEVELS DETECT
+// process = os.osc(1000), os.osc(1000), hmeter(0), hmeter(1)
+// with {
+// 	vmeter(i, x) = attach(x, envelop(x) : vbargraph("chan %i[2][unit:dB]", -70, +5));
+// 	hmeter(i, x) = attach(x, envelop(x) : hbargraph("chan %i[2][unit:dB]", -70, +5));
+// 	envelop = abs : max ~ -(1.0/ma.SR) : max(ba.db2linear(-70)) : ba.linear2db;
+// };
