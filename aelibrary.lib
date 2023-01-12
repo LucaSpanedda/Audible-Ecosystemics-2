@@ -236,61 +236,31 @@ with {
 };
 
 //----------------------------------------------------- INPUTS/OUTPUTS MIXER ---
-// input Mixer
-GM1(x) = x * 
-    si.smoo( ba.db2linear( vslider("GM1 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM1 [unit:dB]", -80, 80));
-GM2(x) = x * 
-    si.smoo( ba.db2linear( vslider("GM2 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM2 [unit:dB]", -80, 80));
-GM3(x) = x *    
-    si.smoo( ba.db2linear( vslider("GM3 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM3 [unit:dB]", -80, 80));
-GM4(x) = x * 
-    si.smoo( ba.db2linear( vslider("GM4 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM4 [unit:dB]", -80, 80));
-// output Mixer
-GO1(x) = x * 
-    si.smoo(ba.db2linear( vslider("GO1 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VO1 [unit:dB]", -80, 80));
-GO2(x) = x * 
-    si.smoo(ba.db2linear( vslider("GO2 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VO2 [unit:dB]", -80, 80));
-GO3(x) = x * 
-    si.smoo(ba.db2linear( vslider("GO3 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VO3 [unit:dB]", -80, 80));
-GO4(x) = x * 
-    si.smoo(ba.db2linear( vslider("GO4 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VO4 [unit:dB]", -80, 80));
-GO5(x) = x * 
-    si.smoo(ba.db2linear( vslider("GO5 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VO5 [unit:dB]", -80, 80));
-GO6(x) = x * 
-    si.smoo(ba.db2linear( vslider("GO6 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VO6 [unit:dB]", -80, 80));
+// Mixer
+gainMic_1A_1(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_1A_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1A1 [unit:dB]", -80, 80));
+gainMic_1A_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_1A_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1A2 [unit:dB]", -80, 80));
+gainMic_1B_1(x) = x *    
+    si.smoo( ba.db2linear( vslider("SF_1B_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1B1 [unit:dB]", -80, 80));
+gainMic_1B_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_1B_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1B2 [unit:dB]", -80, 80));
+gainMic_2A_1(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_2A_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM2A1 [unit:dB]", -80, 80));
+gainMic_2A_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_2A_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM2A2 [unit:dB]", -80, 80));
+gainMic_3_1(x) = x *    
+    si.smoo( ba.db2linear( vslider("SF_3_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM31 [unit:dB]", -80, 80));
+gainMic_3_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_3_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM32 [unit:dB]", -80, 80));
 
 VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) : 
     max(ba.db2linear(-70)) : ba.linear2db;
-
-// inputs and outputs
-Inputs_Mixer(m1, m2, m3, m4) = 
-    hgroup("Inputs/Outputs Mixer", 
-        ( 
-            hgroup("MIC 1", GM1(m1)), 
-            hgroup("MIC 2", GM2(m2)), 
-            hgroup("MIC 3", GM3(m3)), 
-            hgroup("MIC 4", GM4(m4))
-        ) 
-    );
-    
-Outputs_Mixer(o1, o2, o3, o4, o5, o6) = 
-    hgroup("Inputs/Outputs Mixer", 
-        ( 
-            hgroup("OUT 1", GO1(o1)), 
-            hgroup("OUT 2", GO2(o2)), 
-            hgroup("OUT 3", GO3(o3)), 
-            hgroup("OUT 4", GO4(o4)),
-            hgroup("OUT 5", GO3(o5)), 
-            hgroup("OUT 6", GO4(o6))
-        ) 
-    );
