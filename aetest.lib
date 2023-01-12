@@ -36,13 +36,5 @@ TEST_Osc_variable = os.osc(STf) * STg * STt;
 //process = TEST_Osc_variable;
 
 
-// TEST WITH 2 DIRECT MICS (start at compile time)
-GM1 = si.smoo( ba.db2linear( hslider("MIC 1 [unit:db]", -80, -80, 0, .001) ) );
-GM2 = si.smoo( ba.db2linear( hslider("MIC 2 [unit:db]", -80, -80, 0, .001) ) );
-GM3 = si.smoo( ba.db2linear( hslider("MIC 3 [unit:db]", -80, -80, 0, .001) ) );
-GM4 = si.smoo( ba.db2linear( hslider("MIC 4 [unit:db]", -80, -80, 0, .001) ) );
-// w Mixer
-TEST_12Micto1234Mics_G = (_,_) : \(m1,m2).(m1 * GM1, m2 * GM2, m1 * GM3, m2 * GM4);
-// without 
-TEST_12Micto1234Mics_Direct = (_,_) : \(m1,m2).(m1, m2, m1, m2);
+TEST_12Micto1234Mics_Mixer = (_,_) : \(m1,m2).(m1, m2, m1, m2);
 //process = TEST_12Micto1234Mics_G;
