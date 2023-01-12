@@ -26,7 +26,8 @@ var4 = 20;
 
 
 // MAIN SYSTEM FUNCTION
-process = (_,_) : \(m1,m2).(m1, m2, m1, m2) : 
+// process = TEST_Osc_variable <: TEST_12Micto1234Mics_Direct : 
+process = TEST_12Micto1234Mics_Mixer : Inputs_Mixer :
     (signalflow1a : signalflow1b : signalflow2a : signalflow2b : signalflow3) ~ si.bus(2) :
         ( 
           ( par(i, 2, hgroup("GrainOut", inspect(i, -1, 1)) ) : si.block(2) ),
@@ -35,7 +36,7 @@ process = (_,_) : \(m1,m2).(m1, m2, m1, m2) :
             par(i, 8, hgroup("Signal Flow 1a", inspect(i, -1, 1))),
             par(i, 8, hgroup("Signal Flow 1b", inspect(i, -1, 1))),
             par(i, 8, hgroup("Signal Flow 2a", inspect(i, -1, 1)))    
-        );
+        ) : (Outputs_Mixer, si.bus(24));
 
 
 signalflow1a( grainOut1, grainOut2, mic1, mic2, mic3, mic4 ) = grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain
@@ -94,12 +95,12 @@ with {
 signalflow1b( grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3
 with {
     // cntrlMic - original version
-    // cntrlMic(x) = x : HP1(50) : LP1(6000) : 
-    //     integrator(.01) : delayfb(.01, .995) : LP5(.5);
+    cntrlMic(x) = x : HP1(50) : LP1(6000) : 
+        integrator(.01) : delayfb(.01, .995) : LP5(.5);
 
     // cntrlMic - alternative version
-    cntrlMic(x) = x : HP2(50) : LP1(6000) :
-        integrator(.01) : delayfb(.01, .995) : LP5(.04);
+    // cntrlMic(x) = x : HP2(50) : LP1(6000) :
+    //     integrator(.01) : delayfb(.01, .995) : LP5(.04);
 
     cntrlMic1 = mic1 : cntrlMic : 
         // LIMIT - max - min
