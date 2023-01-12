@@ -26,7 +26,7 @@ var4 = 20;
 
 
 // MAIN SYSTEM FUNCTION
-process = aetest.TEST_12Micto1234Mics_G : 
+process = (_,_) : \(m1,m2).(m1, m2, m1, m2) : 
     (signalflow1a : signalflow1b : signalflow2a : signalflow2b : signalflow3) ~ si.bus(2) :
         ( 
           ( par(i, 2, hgroup("GrainOut", inspect(i, -1, 1)) ) : si.block(2) ),
