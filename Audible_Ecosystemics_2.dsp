@@ -9,8 +9,6 @@ declare description " 2022 version - Realised on composer's instructions
 import("stdfaust.lib");
 // import audible ecosystemics objects library
 import("aelibrary.lib");
-// import audible ecosystemics tests library
-import("aetest.lib");
 
 // PERFORMANCE SYSTEM VARIABLES
 SampleRate = 44100;
@@ -26,20 +24,15 @@ var4 = 20;
 
 
 // MAIN SYSTEM FUNCTION
-// process = TEST_Osc_variable <: TEST_12Micto1234Mics_Direct : 
-process = TEST_12Micto1234Mics_Mixer :
-    (signalflow1a : signalflow1b : signalflow2a : signalflow2b : signalflow3) ~ si.bus(2) :
-        ( 
-          ( par(i, 2, hgroup("GrainOut", inspect(i, -1, 1)) ) : si.block(2) ),
-            par(i, 6, hgroup("Signal Flow 3", inspect(i, -1, 1))),
-          ( par(i, 4, hgroup("Mics", inspect(i, -1, 1)) ) : si.block(4) ),
-            par(i, 8, hgroup("Signal Flow 1a", inspect(i, -1, 1))),
-            par(i, 8, hgroup("Signal Flow 1b", inspect(i, -1, 1))),
-            par(i, 8, hgroup("Signal Flow 2a", inspect(i, -1, 1)))    
-        );
+outputrouting(grainOut1, grainOut2, out1, out2, out3, out4, out5, out6, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7) =
+out1, out2, out3, out4, out5, out6; // choose here the signals in output
 
+process = si.bus(8) :> si.bus(4) : (signalflow1a : signalflow1b : signalflow2a : signalflow2b : signalflow3) ~ si.bus(2) : outputrouting;
 
-signalflow1a( grainOut1, grainOut2, mic1, mic2, mic3, mic4 ) = grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain
+signalflow1a( grainOut1, grainOut2, mic1, mic2, mic3, mic4 ) = 
+grainOut1, grainOut2, 
+( (mic1, mic2, mic3, mic4) : vgroup("System Inspectors", par(i, 4, hgroup("Mics", inspect(i, -1, 1)))) ), 
+( (diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain) : vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1a", inspect(i, -1, 1)))) )
 with {
     Mic_1A_1 = hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A_1(mic3) ) );
     Mic_1A_2 = hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A_2(mic4) ) );
@@ -94,7 +87,10 @@ with {
             limit(1, 0);
 };
 
-signalflow1b( grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3
+signalflow1b( grainOut1, grainOut2, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain ) = 
+mic1, mic2, mic3, mic4, 
+diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, 
+( (cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3) : vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1b", inspect(i, -1, 1)))) )
 with {
     Mic_1B_1 = hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B_1(mic1) ) );
     Mic_1B_2 = hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B_2(mic2) ) );
@@ -105,7 +101,6 @@ with {
     // cntrlMic - alternative version
     // cntrlMic(x) = x : HP2(50) : LP1(6000) :
     //     integrator(.01) : delayfb(.01, .995) : LP5(.04);
-
     cntrlMic1 = Mic_1B_1 : cntrlMic : 
         // LIMIT - max - min
         limit(1, 0);
@@ -134,7 +129,11 @@ with {
     triangle3 = triangleWave(1 / var1);
 };
 
-signalflow2a( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3 ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7
+signalflow2a( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3 ) = 
+mic1, mic2, mic3, mic4, 
+diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, 
+cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, 
+( (sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7) : vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 2a", inspect(i, -1, 1)))) )
 with {
     Mic_2A_1 = hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A_1(mic1) ) );
     Mic_2A_2 = hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A_2(mic2) ) );
@@ -185,7 +184,7 @@ with {
 
     sampWOut = SampleWriteLoop : \(A,B,C,D,E).( A );
 
-    variabledelaysig3(x) = x : de.delay(ba.sec2samp(.05), int(ba.sec2samp(.05 * cntrlMain)));
+    variabledelaysig3(x) = x : de.delay( max(0, ba.sec2samp(.05)), max(0, int(ba.sec2samp(.05 * cntrlMain))) );
     sig3 = SampleWriteLoop : \(A,B,C,D,E).( B ) : _ * 
         memWriteLev : variabledelaysig3 * triangle2 * directLevel;
 
@@ -202,7 +201,13 @@ with {
         directLevel;
 };
 
-signalflow2b( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7 ) = mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7, grainOut1, grainOut2, out1, out2
+signalflow2b( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7 ) = 
+mic1, mic2, mic3, mic4, 
+diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, 
+cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, 
+sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7, 
+( (grainOut1, grainOut2) : vgroup("System Inspectors", par(i, 2, hgroup("Granular Sampling", inspect(i, -1, 1)))) ), 
+out1, out2
 with {
     grainOut1 = granular_sampling(var1, timeIndex1, memWriteDel1, cntrlLev1, 21, sampWOut);
 
@@ -233,4 +238,17 @@ with {
         ) :> _ : hgroup( "Mixer", hgroup( "Signal Flow 3", gainMic_2A_2 ) );
 };
 
-signalflow3( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7, grainOut1, grainOut2, out1, out2 ) = grainOut1, grainOut2, out1, out2, (out2 : delayfb((var4 / 2) / 344, 0)), (out1 : delayfb((var4 / 2) / 344, 0)), (out1 : delayfb(var4 / 344, 0)), (out2 : delayfb((var4 / 344), 0)), mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7;
+signalflow3( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7, grainOut1, grainOut2, out1, out2 ) = 
+grainOut1, grainOut2,
+( 
+(   out1, out2, 
+(   out2 : delayfb((var4 / 2) / 344, 0)), 
+(   out1 : delayfb((var4 / 2) / 344, 0)), 
+(   out1 : delayfb(var4 / 344, 0)), 
+(   out2 : delayfb(var4 / 344, 0)) ) 
+: vgroup("System Inspectors", par(i, 6, hgroup("Signal Flow 3", inspect(i, -1, 1))) ) 
+), 
+mic1, mic2, mic3, mic4,
+diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, 
+cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, 
+sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7;

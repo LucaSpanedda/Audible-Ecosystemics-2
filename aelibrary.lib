@@ -7,8 +7,7 @@ declare description " 2022 version - Realised on composer's instructions
 
 // import faust standard library
 import("stdfaust.lib");
-// import audible ecosystemics tests library
-import("aetest.lib");
+
 // PERFORMANCE SYSTEM SampleRate
 SampleRate = 44100;
 
@@ -29,7 +28,7 @@ diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
 //-------------------------------------------------------------------- DELAYS --
 delayfb(delSec,fb,x) = loop ~ _ : mem
 with{ 
-    loop(z) = ( (z * fb + x) @(ba.sec2samp(delSec)-1) );
+    loop(z) = ( (z * fb + x) @(max(0, ba.sec2samp(delSec)-1)) );
 };
 
 //---------------------------------------------------------------- SAMPLEREAD --
@@ -215,6 +214,5 @@ gainMic_3_1(x) = x *
 gainMic_3_2(x) = x * 
     si.smoo( ba.db2linear( vslider("SF_3_2 [unit:db]", 0, -80, 80, .001) ) ) <:
         attach(_, VHmetersEnvelope(_) :vbargraph("VM32 [unit:dB]", -80, 80));
-
 VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) : 
     max(ba.db2linear(-70)) : ba.linear2db;
