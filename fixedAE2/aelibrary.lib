@@ -1,0 +1,218 @@
+declare name "Agostino Di Scipio - AUDIBLE ECOSYSTEMICS n.2";
+declare author "Luca Spanedda";
+declare author "Dario Sanfilippo";
+declare version "alpha";
+declare description " 2022 version - Realised on composer's instructions
+    of the year 2017 edited in L’Aquila, Italy";
+
+// import faust standard library
+import("stdfaust.lib");
+
+// PERFORMANCE SYSTEM SampleRate
+SampleRate = 44100;
+
+//------- ------------- ----- -----------
+//-- LIBRARY -------------------------------------------------------------------
+//------- --------
+
+
+//----------------------------------------------------------------- UTILITIES --
+// limit function for library and system
+limit(maxl,minl,x) = x : max(minl, min(maxl));
+// see signal values 
+inspect(i, lower, upper) = _ <: _ , 
+    vbargraph("sig_%2i [style:numerical]", lower, upper) : attach;
+    //process = (os.osc(.01) : inspect(1, .1, -1, 1));
+diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
+
+//-------------------------------------------------------------------- DELAYS --
+delayfb(delSec,fb,x) = loop ~ _ : mem
+with{ 
+    loop(z) = ( (z * fb + x) @(ba.sec2samp(delSec)-1) );
+};
+
+//---------------------------------------------------------------- SAMPLEREAD --
+sampler(lengthSec, memChunk, ratio, x) = 
+    it.frwtable(3, bufferLen, .0, writePtr, x, readPtr) * window
+    with {
+        memChunkLimited = max(0.010, min(1, memChunk));
+        bufferLen = lengthSec * SampleRate;
+        writePtr = ba.period(bufferLen);
+        grainLen = max(1, ba.if(writePtr > memChunkLimited * bufferLen, 
+            memChunkLimited * bufferLen, 1));
+        readPtr = y
+            letrec {
+                'y = (ratio + y) % grainLen;
+            };
+        window = min(1, abs(((readPtr + grainLen / 2) % grainLen) - 
+            grainLen / 2) / 200);
+    };
+// process = sampler(4, hslider("memChunkLimited", 0.05, 0, 1, .001), 
+    // hslider("ratio", 10, .1, 10, .001), os.osc(100)) <: _, _;
+
+//--------------------------------------------------------------- INTEGRATOR ---
+integrator(seconds, x) = an.abs_envelope_tau(limit(1000,.001,seconds), x);
+
+//----------------------------------------------------------------- LOCALMAX ---
+localMax(seconds, x) = loop ~ si.bus(4) : _ , ! , ! , !
+with {
+    loop(yState, timerState, peakState, timeInSamplesState) = 
+        y , timer , peak , timeInSamples
+    with {
+        timeInSamples = ba.if(reset + 1 - 1', seconds * 
+            ma.SR, timeInSamplesState);
+        reset = timerState >= (timeInSamplesState - 1);
+        timer = ba.if(reset, 1, timerState + 1);
+        peak = max(abs(x), peakState * (1.0 - reset));
+        y = ba.if(reset, peak', yState);
+    };
+};
+//process = os.osc(.1245) : localMax(hslider("windowlocalM",-1,-1,8,.001));
+localmax(resetPeriod, x) = localMax(limit(1000,0,resetPeriod), x);
+
+//----------------------------------------------------------------- TRIANGLE ---
+triangularFunc(x) = abs(ma.frac((x - .5)) * 2.0 - 1.0);
+triangleWave(f) = triangularFunc(os.phasor(1,f));
+
+//------------------------------------------------------------------ FILTERS ---
+onePoleTPT(cf, x) = loop ~ _ : ! , si.bus(3)
+with {
+    g = tan(cf * ma.PI * (1/ma.SR));
+    G = g / (1.0 + g);
+    loop(s) = u , lp , hp , ap
+    with {
+        v = (x - s) * G;
+        u = v + lp;
+        lp = v + s;
+        hp = x - lp;
+        ap = lp - hp;
+    };
+};
+
+LPTPT(cf, x) = onePoleTPT(limit(20000,ma.EPSILON,cf), x) : (_ , ! , !);
+HPTPT(cf, x) = onePoleTPT(limit(20000,ma.EPSILON,cf), x) : (! , _ , !);
+
+SVFTPT(Q, cf, x) = loop ~ si.bus(2) : (! , ! , _ , _ , _ , _ , _)
+    with {
+        g = tan(cf * ma.PI * ma.T);
+        R = 1.0 / (2.0 * Q);
+        G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
+        G2 = 2.0 * R + g;
+        loop(s1, s2) = u1 , u2 , lp , hp , bp , bp * 2.0 * R , x - bp * 4.0 * R
+            with {
+                hp = (x - s1 * G2 - s2) * G1;
+                v1 = hp * g;
+                bp = s1 + v1;
+                v2 = bp * g;
+                lp = s2 + v2;
+                u1 = v1 + bp;
+                u2 = v2 + lp;
+            };
+    };
+
+BPsvftpt(bw, cf, x) = Q , CF , x : SVFTPT : (! , ! , ! , _ , !)
+    with {
+        CF = max(20, min(20480, LPTPT(1, cf)));
+        BW = max(1, min(20480, LPTPT(1, bw)));
+        Q = max(.01, min(100, BW / CF));
+    };
+
+// Order Aproximations filters - Outs
+LP1(CF, x) = x : LPTPT(CF);
+HP1(CF, x) = x : HPTPT(CF);
+LP2(CF, x) = x : LPTPT(CF) : LPTPT(CF);
+HP2(CF, x) = x : HPTPT(CF) : HPTPT(CF);
+LP3(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+HP3(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+LP4(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+HP4(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+LP5(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+HP5(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+
+//-------------------------------------------------------- GRANULAR SAMPLING ---
+grain(L, position, duration, x, trigger) = hann(phase) * buffer(readPtr, x)
+with {
+    maxLength = 1920000;
+    length = L * ma.SR;
+    hann(ph) = sin(ma.PI * ph) ^ 2.0;
+    lineSegment = loop ~ si.bus(2) : _ , ! , _
+    with {
+        loop(yState, incrementState) = y , increment , ready
+        with {
+            ready = ((yState == 0.0) | (yState == 1.0)) & trigger;
+            y = ba.if(ready, increment, min(1.0, yState + increment));
+            increment = ba.if(ready, ma.T / max(ma.T, duration), 
+                incrementState);
+        };
+    };
+    phase = lineSegment : _ , !;
+    unlocking = lineSegment : ! , _;
+    lock(param) = ba.sAndH(unlocking, param); 
+    grainPosition = lock(position);
+    grainDuration = lock(duration);
+    readPtr = grainPosition * length + phase * grainDuration * ma.SR;
+    buffer(readPtr, x) = 
+        it.frwtable(3, maxLength, .0, writePtr, x, readPtrWrapped)
+    with {
+        writePtr = ba.period(length);
+        readPtrWrapped = ma.modulo(readPtr, length);
+    };
+};
+
+// works for N >= 2
+triggerArray(N, rate) = loop ~ si.bus(3) : (! , ! , _) <: 
+    par(i, N, == (i)) : par(i, N, \(x).(x > x'))
+with {
+    loop(incrState, phState, counterState) = incr , ph , counter
+    with {
+        init = 1 - 1';
+        trigger = (phState < phState') + init;
+        incr = ba.if(trigger, rate * ma.T, incrState);
+        ph = ma.frac(incr + phState);
+        counter = (trigger + counterState) % N;
+    };
+};
+
+grainN(voices, L, position, rate, duration, x) = triggerArray(voices, rate) : 
+    par(i, voices, grain(L, position, duration, x));
+
+granular_sampling(var1, timeIndex, memWriteDel, cntrlLev, divDur, x) = 
+    grainN(8, var1, position, rate, duration, x) :> /(8)
+with {
+    rnd = no.noise;
+    memPointerJitter = rnd * (1.0 - memWriteDel) * .01;
+    position = timeIndex * (1.0 - ((1.0 - memWriteDel) * .01)) + 
+        memPointerJitter;
+    density = 1.0 - cntrlLev;
+    rate = 50 ^ (density * 2.0 - 1.0);
+    grainDuration = .023 + (1.0 - memWriteDel) / divDur;
+    duration = grainDuration + grainDuration * .1 * rnd;
+};
+
+//----------------------------------------------------- INPUTS/OUTPUTS MIXER ---
+gainMic_1A_1(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_1A_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1A1 [unit:dB]", -80, 80));
+gainMic_1A_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_1A_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1A2 [unit:dB]", -80, 80));
+gainMic_1B_1(x) = x *    
+    si.smoo( ba.db2linear( vslider("SF_1B_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1B1 [unit:dB]", -80, 80));
+gainMic_1B_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_1B_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM1B2 [unit:dB]", -80, 80));
+gainMic_2A_1(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_2A_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM2A1 [unit:dB]", -80, 80));
+gainMic_2A_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_2A_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM2A2 [unit:dB]", -80, 80));
+gainMic_3_1(x) = x *    
+    si.smoo( ba.db2linear( vslider("SF_3_1 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM31 [unit:dB]", -80, 80));
+gainMic_3_2(x) = x * 
+    si.smoo( ba.db2linear( vslider("SF_3_2 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("VM32 [unit:dB]", -80, 80));
+VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) : 
+    max(ba.db2linear(-70)) : ba.linear2db;
