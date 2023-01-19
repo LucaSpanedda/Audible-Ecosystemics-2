@@ -34,8 +34,8 @@ grainOut1, grainOut2,
 ( (mic1, mic2, mic3, mic4) : vgroup("System Inspectors", par(i, 4, hgroup("Mics", inspect(i, -1, 1)))) ), 
 ( (diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain) : vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1a", inspect(i, -1, 1)))) )
 with {
-    Mic_1A_1 = hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A_1(mic3) ) );
-    Mic_1A_2 = hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A_2(mic4) ) );
+    Mic_1A_1 = mic3 * hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A) );
+    Mic_1A_2 = mic4 * hgroup( "Mixer", hgroup( "Signal Flow 1A", gainMic_1A) );
     map6sumx6 = (Mic_1A_1 : integrator(.01) : delayfb(.01, .95)) +
                 (Mic_1A_2 : integrator(.01) : delayfb(.01, .95)) : 
                     \(x).(6 + x * 6);
@@ -92,8 +92,8 @@ mic1, mic2, mic3, mic4,
 diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, 
 ( (cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3) : vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1b", inspect(i, -1, 1)))) )
 with {
-    Mic_1B_1 = hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B_1(mic1) ) );
-    Mic_1B_2 = hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B_2(mic2) ) );
+    Mic_1B_1 = mic1 * hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B) );
+    Mic_1B_2 = mic2 * hgroup( "Mixer", hgroup( "Signal Flow 1B", gainMic_1B) );
     // cntrlMic - original version
     cntrlMic(x) = x : HP1(50) : LP1(6000) : 
         integrator(.01) : delayfb(.01, .995) : LP5(.5);
@@ -135,8 +135,8 @@ diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed
 cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, 
 ( (sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7) : vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 2a", inspect(i, -1, 1)))) )
 with {
-    Mic_2A_1 = hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A_1(mic1) ) );
-    Mic_2A_2 = hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A_2(mic2) ) );
+    Mic_2A_1 = mic1 * hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A) );
+    Mic_2A_2 = mic2 * hgroup( "Mixer", hgroup( "Signal Flow 2A", gainMic_2A) );
     micIN1 = Mic_2A_1 : HP1(50) : LP1(6000) * 
         (1 - cntrlMic1);
 
@@ -223,7 +223,7 @@ with {
               0,
               sig4,
               grainOut1 * (1 - memWriteLev) + grainOut2 * memWriteLev 
-        ) :> _ : hgroup( "Mixer", hgroup( "Signal Flow 3", gainMic_2A_1 ) );
+        ) :> _ * hgroup( "Mixer", hgroup( "Signal Flow 3", gainMic_3) );
 
     out2 =  
         ( 
@@ -235,7 +235,7 @@ with {
               sig3,
               sig7,
               grainOut1 * memWriteLev + grainOut2 * (1 - memWriteLev) 
-        ) :> _ : hgroup( "Mixer", hgroup( "Signal Flow 3", gainMic_2A_2 ) );
+        ) :> _ * hgroup( "Mixer", hgroup( "Signal Flow 3", gainMic_3) );
 };
 
 signalflow3( mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7, grainOut1, grainOut2, out1, out2 ) = 

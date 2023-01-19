@@ -190,29 +190,17 @@ with {
 };
 
 //----------------------------------------------------- INPUTS/OUTPUTS MIXER ---
-gainMic_1A_1(x) = x * 
-    si.smoo( ba.db2linear( vslider("SF_1A_1 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM1A1 [unit:dB]", -80, 80));
-gainMic_1A_2(x) = x * 
-    si.smoo( ba.db2linear( vslider("SF_1A_2 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM1A2 [unit:dB]", -80, 80));
-gainMic_1B_1(x) = x *    
-    si.smoo( ba.db2linear( vslider("SF_1B_1 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM1B1 [unit:dB]", -80, 80));
-gainMic_1B_2(x) = x * 
-    si.smoo( ba.db2linear( vslider("SF_1B_2 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM1B2 [unit:dB]", -80, 80));
-gainMic_2A_1(x) = x * 
-    si.smoo( ba.db2linear( vslider("SF_2A_1 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM2A1 [unit:dB]", -80, 80));
-gainMic_2A_2(x) = x * 
-    si.smoo( ba.db2linear( vslider("SF_2A_2 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM2A2 [unit:dB]", -80, 80));
-gainMic_3_1(x) = x *    
-    si.smoo( ba.db2linear( vslider("SF_3_1 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM31 [unit:dB]", -80, 80));
-gainMic_3_2(x) = x * 
-    si.smoo( ba.db2linear( vslider("SF_3_2 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("VM32 [unit:dB]", -80, 80));
+gainMic_1A =
+    si.smoo( ba.db2linear( vslider("SF_1A [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("1A [unit:dB]", -80, 20));
+gainMic_1B =   
+    si.smoo( ba.db2linear( vslider("SF_1B [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("1B [unit:dB]", -80, 20));
+gainMic_2A =
+    si.smoo( ba.db2linear( vslider("SF_2A [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("2A [unit:dB]", -80, 20));
+gainMic_3 =   
+    si.smoo( ba.db2linear( vslider("SF_3 [unit:db]", 0, -80, 80, .001) ) ) <:
+        attach(_, VHmetersEnvelope(_) :vbargraph("3 [unit:dB]", -80, 20));
 VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) : 
-    max(ba.db2linear(-70)) : ba.linear2db;
+    max(ba.db2linear(-80)) : ba.linear2db;
