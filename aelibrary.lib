@@ -11,6 +11,7 @@ import("stdfaust.lib");
 // PERFORMANCE SYSTEM SampleRate
 SampleRate = 44100;
 
+
 //------- ------------- ----- -----------
 //-- LIBRARY -------------------------------------------------------------------
 //------- --------
@@ -21,8 +22,8 @@ SampleRate = 44100;
 limit(maxl,minl,x) = x : max(minl, min(maxl));
 // see signal values 
 inspect(i, lower, upper) = _ * 1000 <: _ , 
-    vbargraph("sig_%2i [style:numerical]", lower * 1000, upper * 1000) : attach :
-    _ / 1000;
+    vbargraph("sig_%2i [style:numerical]", lower * 1000, upper * 1000) : 
+        attach : _ / 1000;
     //process = (os.osc(.01) : inspect(1, .1, -1, 1));
 diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
 
@@ -34,7 +35,7 @@ with{
 
 //---------------------------------------------------------------- SAMPLEREAD --
 sampler(lengthSec, memChunk, ratio, x) = 
-    it.frwtable(3, bufferLen, .0, writePtr, x, readPtr) * window
+    it.frwtable(3, 20 * SampleRate, .0, writePtr, x, readPtr) * window
     with {
         memChunkLimited = max(0.010, min(1, memChunk));
         bufferLen = lengthSec * SampleRate;
@@ -133,8 +134,8 @@ HP5(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
 //-------------------------------------------------------- GRANULAR SAMPLING ---
 grain(L, position, duration, x, trigger) = hann(phase) * buffer(readPtr, x)
 with {
-    maxLength = 1920000;
-    length = L * ma.SR;
+    maxLength = 20 * SampleRate;
+    length = L * SampleRate;
     hann(ph) = sin(ma.PI * ph) ^ 2.0;
     lineSegment = loop ~ si.bus(2) : _ , ! , _
     with {
@@ -199,16 +200,23 @@ gainMic_2A =
     si.smoo( ba.db2linear( vslider("SF_2A [unit:db]", 0, -84, 24, .001)));
 gainMic_3 =   
     si.smoo( ba.db2linear( vslider("SF_3 [unit:db]", 0, -84, 24, .001)));
+
+//--------------------------------------------------------------- INSPECTORS ---
 VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) : 
     max(ba.db2linear(-84)) : ba.linear2db;
 
 MicSum1Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 1A", vbargraph("Mic SF1A Sum [unit:dB]", -80, 20))));
+    hgroup( "Mixer", hgroup( "Signal Flow 1A", 
+        vbargraph("Mic SF1A Sum [unit:dB]", -80, 20))));
 Mic11Binspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 1B", vbargraph("Mic1 SF1B [unit:dB]", -80, 20))));
+    hgroup( "Mixer", hgroup( "Signal Flow 1B", 
+        vbargraph("Mic1 SF1B [unit:dB]", -80, 20))));
 Mic21Binspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 1B", vbargraph("Mic2 SF1B [unit:dB]", -80, 20))));
+    hgroup( "Mixer", hgroup( "Signal Flow 1B", 
+        vbargraph("Mic2 SF1B [unit:dB]", -80, 20))));
 Mic12Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 2A", vbargraph("Mic1 SF2A [unit:dB]", -80, 20))));
+    hgroup( "Mixer", hgroup( "Signal Flow 2A", 
+        vbargraph("Mic1 SF2A [unit:dB]", -80, 20))));
 Mic22Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 2A", vbargraph("Mic2 SF2A [unit:dB]", -80, 20))));
+    hgroup( "Mixer", hgroup( "Signal Flow 2A", 
+        vbargraph("Mic2 SF2A [unit:dB]", -80, 20))));

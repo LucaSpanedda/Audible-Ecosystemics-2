@@ -12,15 +12,10 @@ import("aelibrary.lib");
 
 // PERFORMANCE SYSTEM VARIABLES
 SampleRate = 44100;
-var1 = 20;
-var2 = vgroup("System Variables", nentry("Var2", 100, 1, 10000, 1));
-var3 = 0.5;
-var4 = 20;
-// SampleRate = 44100;
-// var1 = nentry("Var 1", 20, 1, 20, 1);
-// var2 = nentry("Var 2", 100, 1, 10000, 1);
-// var3 = nentry("Var 3", 1, 0, 1, 1);
-// var4 = nentry("Var 4", 20, 1, 20, 1);
+var1 = hgroup("System Variables", nentry("Var 1", 20, 1, 20, 1));
+var2 = hgroup("System Variables", nentry("Var 2", 100, 1, 10000, 1));
+var3 = hgroup("System Variables", nentry("Var 3", .5, 0, 1, .001));
+var4 = hgroup("System Variables", nentry("Var 4", 20, 1, 20, 1));
 
 
 //------- ------------- ----- -----------
@@ -32,7 +27,7 @@ var4 = 20;
 outputrouting(grainOut1, grainOut2, out1, out2, out3, out4, out5, out6, mic1, mic2, mic3, mic4, diffHL, memWriteDel1, memWriteDel2, memWriteLev, cntrlLev1, cntrlLev2, cntrlFeed, cntrlMain, cntrlMic1, cntrlMic2, directLevel, timeIndex1, timeIndex2, triangle1, triangle2, triangle3, sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7) =
 out1, out2, out3, out4, out5, out6; // choose here the signals in output
 
-process = si.bus(8) :> par(i, 4, _ * vgroup("System Variables", checkbox("mute/unmute"))) : 
+process = si.bus(8) :> par(i, 4, _ * vgroup("Mixer", checkbox("mute/unmute"))) : 
     (signalflow1a : signalflow1b : signalflow2a : signalflow2b : signalflow3) ~ si.bus(2) : 
         outputrouting;
 
@@ -53,15 +48,17 @@ with {
 
     SenstoExt = (map6sumx6, localMaxDiff) : 
         localmax <: _ , (_ : delayfb(12, 0)) : + : * (.5) : 
-            LP1(.5) :   hgroup("sf1A Inspectors", 
+            LP1(.5) :   vgroup("System Inspectors",
+                        hgroup("Signal Flow 1a Internal", 
                         hgroup("Sens. to Ext. Cond.", 
-                        inspect(101, -1, 1)));
+                        inspect(101, -1, 1))));
 
     diffHL =    ((Mic_1A_1 + Mic_1A_2) : HP3(var2) : integrator(.05)) ,
                 ((Mic_1A_1 + Mic_1A_2) : LP3(var2) : integrator(.10)) :
-                    \(x, y).((x - y) :  hgroup("sf1A Inspectors", 
+                    \(x, y).((x - y) :  vgroup("System Inspectors",
+                                        hgroup("Signal Flow 1a Internal", 
                                         hgroup("diffHL Centroid", 
-                                        inspect(100, -1, 1)))) * 
+                                        inspect(100, -1, 1))))) * 
                         (1 - SenstoExt) : delayfb(.01, .995) : 
                             LP5(25) : \(x).(.5 + x * .5) : 
                                 // LIMIT - max - min
