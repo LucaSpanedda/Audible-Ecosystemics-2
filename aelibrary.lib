@@ -20,8 +20,9 @@ SampleRate = 44100;
 // limit function for library and system
 limit(maxl,minl,x) = x : max(minl, min(maxl));
 // see signal values 
-inspect(i, lower, upper) = _ <: _ , 
-    vbargraph("sig_%2i [style:numerical]", lower, upper) : attach;
+inspect(i, lower, upper) = _ * 1000 <: _ , 
+    vbargraph("sig_%2i [style:numerical]", lower * 1000, upper * 1000) : attach :
+    _ / 1000;
     //process = (os.osc(.01) : inspect(1, .1, -1, 1));
 diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
 
@@ -94,7 +95,7 @@ HPTPT(cf, x) = onePoleTPT(limit(20000,ma.EPSILON,cf), x) : (! , _ , !);
 
 SVFTPT(Q, cf, x) = loop ~ si.bus(2) : (! , ! , _ , _ , _ , _ , _)
     with {
-        g = tan(cf * ma.PI * ma.T);
+        g = tan(cf * ma.PI * (1.0/ma.SR));
         R = 1.0 / (2.0 * Q);
         G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
         G2 = 2.0 * R + g;
@@ -141,7 +142,7 @@ with {
         with {
             ready = ((yState == 0.0) | (yState == 1.0)) & trigger;
             y = ba.if(ready, increment, min(1.0, yState + increment));
-            increment = ba.if(ready, ma.T / max(ma.T, duration), 
+            increment = ba.if(ready, (1.0/ma.SR) / max((1.0/ma.SR), duration), 
                 incrementState);
         };
     };
@@ -167,7 +168,7 @@ with {
     with {
         init = 1 - 1';
         trigger = (phState < phState') + init;
-        incr = ba.if(trigger, rate * ma.T, incrState);
+        incr = ba.if(trigger, rate * (1.0/ma.SR), incrState);
         ph = ma.frac(incr + phState);
         counter = (trigger + counterState) % N;
     };
@@ -191,16 +192,23 @@ with {
 
 //----------------------------------------------------- INPUTS/OUTPUTS MIXER ---
 gainMic_1A =
-    si.smoo( ba.db2linear( vslider("SF_1A [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("1A [unit:dB]", -80, 20));
+    si.smoo( ba.db2linear( vslider("SF_1A [unit:db]", 0, -84, 24, .001)));
 gainMic_1B =   
-    si.smoo( ba.db2linear( vslider("SF_1B [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("1B [unit:dB]", -80, 20));
+    si.smoo( ba.db2linear( vslider("SF_1B [unit:db]", 0, -84, 24, .001)));
 gainMic_2A =
-    si.smoo( ba.db2linear( vslider("SF_2A [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("2A [unit:dB]", -80, 20));
+    si.smoo( ba.db2linear( vslider("SF_2A [unit:db]", 0, -84, 24, .001)));
 gainMic_3 =   
-    si.smoo( ba.db2linear( vslider("SF_3 [unit:db]", 0, -80, 80, .001) ) ) <:
-        attach(_, VHmetersEnvelope(_) :vbargraph("3 [unit:dB]", -80, 20));
+    si.smoo( ba.db2linear( vslider("SF_3 [unit:db]", 0, -84, 24, .001)));
 VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) : 
-    max(ba.db2linear(-80)) : ba.linear2db;
+    max(ba.db2linear(-84)) : ba.linear2db;
+
+MicSum1Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
+    hgroup( "Mixer", hgroup( "Signal Flow 1A", vbargraph("Mic SF1A Sum [unit:dB]", -80, 20))));
+Mic11Binspect = _ <: attach(_, VHmetersEnvelope(_) :
+    hgroup( "Mixer", hgroup( "Signal Flow 1B", vbargraph("Mic1 SF1B [unit:dB]", -80, 20))));
+Mic21Binspect = _ <: attach(_, VHmetersEnvelope(_) :
+    hgroup( "Mixer", hgroup( "Signal Flow 1B", vbargraph("Mic2 SF1B [unit:dB]", -80, 20))));
+Mic12Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
+    hgroup( "Mixer", hgroup( "Signal Flow 2A", vbargraph("Mic1 SF2A [unit:dB]", -80, 20))));
+Mic22Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
+    hgroup( "Mixer", hgroup( "Signal Flow 2A", vbargraph("Mic2 SF2A [unit:dB]", -80, 20))));
