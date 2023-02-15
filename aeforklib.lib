@@ -113,10 +113,9 @@ with {
         ap = lp - hp;
     };
 };
-LPTPT(cf, x) = onePoleTPT(limit(20000,ma.EPSILON,cf), x) : (_ , ! , !);
-HPTPT(cf, x) = onePoleTPT(limit(20000,ma.EPSILON,cf), x) : (! , _ , !);
-// TEST
-// process = (-100, no.noise) : HPTPT;
+
+LPTPT(CF, x) = onePoleTPT(max(ma.EPSILON, min(20480, CF), x) : (_ , ! , !);
+HPTPT(CF, x) = onePoleTPT(max(ma.EPSILON, min(20480, CF), x) : (! , _ , !);
 
 SVFTPT(K, Q, CF, x) = circuitout : ! , ! , _ , _ , _ , _ , _ , _ , _ , _
 with{
@@ -142,24 +141,15 @@ with{
     // choose the output from the SVF Filter (ex. bshelf)
     circuitout = circuit ~ si.bus(2);
 };
-// Outs = (lp , hp , bp, notch, apf, ubp, peak, bshelf)
-// SVFTPT(K, Q, CF, x) = (Filter-K, Filter-Q, Frequency Cut)
 
-// Filters Bank
-LPSVF(Q, CF, x) = SVFTPT(0, Q, 
-    limit(20000,ma.EPSILON,CF), x) : _ , ! , ! , ! , ! , ! , ! , ! ;
-HPSVF(Q, CF, x) = SVFTPT(0, Q, 
-    limit(20000,ma.EPSILON,CF), x) : ! , _ , ! , ! , ! , ! , ! , !;
-//process = (-1, -10000, no.noise) <: LPSVF, HPSVF;
-BPsvftpt(BW, CF, x) = SVFTPT(0 : ba.db2linear, ql, cfl, 
-    x ) : ! , ! , ! , ! , !, _ , ! , !
-with{
-    cfl = limit(20000,ma.EPSILON,CF);
-    bwl = limit(20000,ma.EPSILON,BW);
-    ql = cfl / bwl;
-};
-// TEST
-//process = (1, 1000, no.noise) : BPsvftpt;
+LPSVF(Q, CF, x) = SVFTPT(0, Q, limit(20000, ma.EPSILON, CF), x) : _ , ! , ! , ! , ! , ! , ! , ! ;
+HPSVF(Q, CF, x) = SVFTPT(0, Q, limit(20000, ma.EPSILON, CF), x) : ! , _ , ! , ! , ! , ! , ! , !;
+BPsvftpt(bw, cf, x) = Q , CF , x : SVFTPT : (! , ! , ! , _ , !)
+    with {
+        CF = max(20, min(20480, LPTPT(1, cf)));
+        BW = max(1, min(20480, LPTPT(1, bw)));
+        Q = max(.01, min(100, BW / CF));
+    };
 
 // Butterworth
 butterworthQ(order, stage) = qFactor(order % 2)
@@ -184,8 +174,30 @@ with {
     cascade(1) = x : HPTPT(cf) : seq(i, (N - 1) /
     2, HPSVF(butterworthQ(N, i), cf));
 };
-//process = HPButterworthN(10, -1000, no.noise), 
- // LPButterworthN(10, -1000, no.noise);
+
+// Filters Order Butterworth
+LP1(CF, x) = x : LPButterworthN(1, CF, x);
+HP1(CF, x) = x : HPButterworthN(1, CF, x);
+LP2(CF, x) = x : LPButterworthN(2, CF, x); 
+HP2(CF, x) = x : HPButterworthN(2, CF, x); 
+LP3(CF, x) = x : LPButterworthN(3, CF, x); 
+HP3(CF, x) = x : HPButterworthN(3, CF, x); 
+LP4(CF, x) = x : LPButterworthN(4, CF, x);
+HP4(CF, x) = x : HPButterworthN(4, CF, x); 
+LP5(CF, x) = x : LPButterworthN(5, CF, x); 
+HP5(CF, x) = x : HPButterworthN(5, CF, x); 
+
+// Filters Order in series
+// LP1(CF, x) = x : LPTPT(CF);
+// HP1(CF, x) = x : HPTPT(CF);
+// LP2(CF, x) = x : LPTPT(CF) : LPTPT(CF);
+// HP2(CF, x) = x : HPTPT(CF) : HPTPT(CF);
+// LP3(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+// HP3(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+// LP4(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+// HP4(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
+// LP5(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
+// HP5(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
 
 //-------------------------------------------------------- GRANULAR SAMPLING ---
 grain(L, position, duration, x, trigger) = hann(phase) * buffer(readPtr, x)

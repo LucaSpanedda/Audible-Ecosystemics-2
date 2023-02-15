@@ -12,10 +12,10 @@ import("aelibrary.lib");
 
 // PERFORMANCE SYSTEM VARIABLES
 SampleRate = 44100;
-var1 = hgroup("System Variables", nentry("Var 1", 20, 1, 20, 1));
-var2 = hgroup("System Variables", nentry("Var 2", 100, 1, 10000, 1));
-var3 = hgroup("System Variables", nentry("Var 3", .5, 0, 1, .001));
-var4 = hgroup("System Variables", nentry("Var 4", 20, 1, 20, 1));
+var1 = hgroup("System Variables", nentry("Var 1", 8.0, 1, 20, 1));
+var2 = hgroup("System Variables", nentry("Var 2", 50, 1, 10000, 1));
+var3 = hgroup("System Variables", nentry("Var 3", .25, 0, 1, .001));
+var4 = hgroup("System Variables", nentry("Var 4", 8.2, 1, 20, 1));
 
 
 //------- ------------- ----- -----------
@@ -217,9 +217,11 @@ sampWOut, sig1, sig2, sig3, sig4, sig5, sig6, sig7,
 grainOut1, grainOut2, 
 out1, out2
 with {
-    grainOut1 = granular_sampling(var1, timeIndex1, memWriteDel1, cntrlLev1, 21, sampWOut);
+    grainOut1 = granular_sampling(var1, timeIndex1, memWriteDel1, cntrlLev1, 21, sampWOut) :
+    vgroup("System Inspectors", hgroup("Signal Flow 3", hgroup("Granular Sampling 1", inspect(180, -1, 1))));
 
-    grainOut2 = granular_sampling(var1, timeIndex2, memWriteDel2, cntrlLev2, 20, sampWOut);
+    grainOut2 = granular_sampling(var1, timeIndex2, memWriteDel2, cntrlLev2, 20, sampWOut) :
+    vgroup("System Inspectors", hgroup("Signal Flow 3", hgroup("Granular Sampling 2", inspect(181, -1, 1))));
 
     out1 =  
         ( 
