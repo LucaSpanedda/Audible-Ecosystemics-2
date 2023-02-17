@@ -65,7 +65,7 @@ with {
         y = ba.if(reset, peak', yState);
     };
 };
-//process = os.osc(.1245) : localMax(hslider("windowlocalM",-1,-1,8,.001));
+
 localmax(resetPeriod, x) = localMax(limit(1000,0,resetPeriod), x);
 
 //----------------------------------------------------------------- TRIANGLE ---
@@ -261,10 +261,10 @@ inspect(i, lower, upper) = _ * 1000 <: _ ,
 
 diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
 
-SF2Ainspect = vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 2a [23]", _ : inspect(i+1, -1, 1))));
-SF1Binspect = vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1b [22]", _ : inspect(i+1, -1, 1))));
-SF1Ainspect = vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1a [21]", _ : inspect(i+1, -1, 1))));
-SF3Oinspect = vgroup("System Inspectors", par(i, 6, hgroup("Signal Flow  3 [24]", _ : inspect(i+1, -1, 1))));
+SF2Ainspect = tgroup("Control", vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 2a [23]", _ : inspect(i+1, -1, 1)))));
+SF1Binspect = tgroup("Control", vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1b [22]", _ : inspect(i+1, -1, 1)))));
+SF1Ainspect = tgroup("Control", vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1a [21]", _ : inspect(i+1, -1, 1)))));
+SF3Oinspect = tgroup("Control", vgroup("System Inspectors", par(i, 6, hgroup("Signal Flow  3 [24]", _ : inspect(i+1, -1, 1)))));
 
 GSinspect(i, x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Internal/h:Granular Sampling/GS %i Gain [unit:db]", 0, -84, 24, .001))) <: 
     attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Internal/h:Granular Sampling/GS %i [unit:dB]", -80, 20));
