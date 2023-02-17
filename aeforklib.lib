@@ -7,10 +7,14 @@ declare description " 2022 version - Realised on composer's instructions
 
 // import faust standard library
 import("stdfaust.lib");
-// import audible ecosystemics tests library
-import("aetest.lib");
-// PERFORMANCE SYSTEM SampleRate
+
+// PERFORMANCE SYSTEM VARIABLES
 SampleRate = 44100;
+var1 = nentry("t:Control/h:System Variables/Var 1", 8.0, 1, 20, 1);
+var2 = nentry("t:Control/h:System Variables/Var 2", 50, 1, 10000, 1);
+var3 = nentry("t:Control/h:System Variables/Var 3", .25, 0, 1, .001);
+var4 = nentry("t:Control/h:System Variables/Var 4", 8.2, 1, 20, 1);
+
 
 //------- ------------- ----- -----------
 //-- LIBRARY -------------------------------------------------------------------

@@ -8,8 +8,12 @@ declare description " 2022 version - Realised on composer's instructions
 // import faust standard library
 import("stdfaust.lib");
 
-// PERFORMANCE SYSTEM SampleRate
+// PERFORMANCE SYSTEM VARIABLES
 SampleRate = 44100;
+var1 = nentry("t:Control/h:System Variables/Var 1", 8.0, 1, 20, 1);
+var2 = nentry("t:Control/h:System Variables/Var 2", 50, 1, 10000, 1);
+var3 = nentry("t:Control/h:System Variables/Var 3", .25, 0, 1, .001);
+var4 = nentry("t:Control/h:System Variables/Var 4", 8.2, 1, 20, 1);
 
 
 //------- ------------- ----- -----------
@@ -20,12 +24,6 @@ SampleRate = 44100;
 //----------------------------------------------------------------- UTILITIES --
 // limit function for library and system
 limit(maxl,minl,x) = x : max(minl, min(maxl));
-// see signal values 
-inspect(i, lower, upper) = _ * 1000 <: _ , 
-    vbargraph("sig_%2i [style:numerical]", lower * 1000, upper * 1000) : 
-        attach : _ / 1000;
-    //process = (os.osc(.01) : inspect(1, .1, -1, 1));
-diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
 
 //-------------------------------------------------------------------- DELAYS --
 delayfb(delSec,fb,x) = loop ~ _ : mem
@@ -49,8 +47,6 @@ sampler(lengthSec, memChunk, ratio, x) =
         window = min(1, abs(((readPtr + grainLen / 2) % grainLen) - 
             grainLen / 2) / 200);
     };
-// process = sampler(4, hslider("memChunkLimited", 0.05, 0, 1, .001), 
-    // hslider("ratio", 10, .1, 10, .001), os.osc(100)) <: _, _;
 
 //--------------------------------------------------------------- INTEGRATOR ---
 integrator(seconds, x) = an.abs_envelope_tau(limit(1000,.001,seconds), x);
@@ -243,7 +239,7 @@ grainN(voices, L, position, rate, duration, x) = triggerArray(voices, rate) :
     par(i, voices, grain(L, position, duration, x));
 
 granular_sampling(var1, timeIndex, memWriteDel, cntrlLev, divDur, x) = 
-    grainN(8, var1, position, rate, duration, x) :> _
+    grainN(10, var1, position, rate, duration, x) :> _
 with {
     rnd = no.noise;
     memPointerJitter = rnd * (1.0 - memWriteDel) * .01;
@@ -255,32 +251,54 @@ with {
     duration = grainDuration + grainDuration * .1 * rnd;
 };
 
-//----------------------------------------------------- INPUTS/OUTPUTS MIXER ---
-gainMic_1A =
-    si.smoo( ba.db2linear( vslider("SF_1A [unit:db]", 0, -84, 24, .001)));
-gainMic_1B =   
-    si.smoo( ba.db2linear( vslider("SF_1B [unit:db]", 0, -84, 24, .001)));
-gainMic_2A =
-    si.smoo( ba.db2linear( vslider("SF_2A [unit:db]", 0, -84, 24, .001)));
-gainMic_3 =   
-    si.smoo( ba.db2linear( vslider("SF_3 [unit:db]", 0, -84, 24, .001)));
-
-//--------------------------------------------------------------- INSPECTORS ---
+//---------------------------------------------------------------------- GUI ---
 VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) : 
     max(ba.db2linear(-84)) : ba.linear2db;
 
-MicSum1Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 1A", 
-        vbargraph("Mic SF1A Sum [unit:dB]", -80, 20))));
-Mic11Binspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 1B", 
-        vbargraph("Mic1 SF1B [unit:dB]", -80, 20))));
-Mic21Binspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 1B", 
-        vbargraph("Mic2 SF1B [unit:dB]", -80, 20))));
-Mic12Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 2A", 
-        vbargraph("Mic1 SF2A [unit:dB]", -80, 20))));
-Mic22Ainspect = _ <: attach(_, VHmetersEnvelope(_) :
-    hgroup( "Mixer", hgroup( "Signal Flow 2A", 
-        vbargraph("Mic2 SF2A [unit:dB]", -80, 20))));
+inspect(i, lower, upper) = _ * 1000 <: _ , 
+    vbargraph("sig_%2i [style:numerical]", lower * 1000, upper * 1000) : 
+        attach : _ / 1000;
+
+diffDebug(x) = an.abs_envelope_tau(1, (x-x')) * (SampleRate/2);
+
+SF2Ainspect = vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 2a [23]", _ : inspect(i+1, -1, 1))));
+SF1Binspect = vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1b [22]", _ : inspect(i+1, -1, 1))));
+SF1Ainspect = vgroup("System Inspectors", par(i, 8, hgroup("Signal Flow 1a [21]", _ : inspect(i+1, -1, 1))));
+SF3Oinspect = vgroup("System Inspectors", par(i, 6, hgroup("Signal Flow  3 [24]", _ : inspect(i+1, -1, 1))));
+
+GSinspect(i, x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Internal/h:Granular Sampling/GS %i Gain [unit:db]", 0, -84, 24, .001))) <: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Internal/h:Granular Sampling/GS %i [unit:dB]", -80, 20));
+
+SRinspect(i, x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Internal/h:Sample Read/SR %i Gain [unit:db]", 0, -84, 24, .001))) <: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Internal/h:Sample Read/SR %i [unit:dB]", -80, 20));
+
+gainMic_1A1(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow 1A/Mic 3 [10][unit:db]", 0, -84, 24, .001))) <: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow 1A/Mic 3 VH [unit:dB]", -80, 20));  
+gainMic_1A2(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow 1A/Mic 4 [11][unit:db]", 0, -84, 24, .001))) <: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow 1A/Mic 4 VH [unit:dB]", -80, 20)); 
+gainMic_1B1(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow 1B/Mic 1 [12][unit:db]", 0, -84, 24, .001))) <: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow 1B/Mic 1 VH [unit:dB]", -80, 20));  
+gainMic_1B2(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow 1B/Mic 2 [13][unit:db]", 0, -84, 24, .001))) <: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow 1B/Mic 2 VH [unit:dB]", -80, 20)); 
+gainMic_2A1(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow 2A/Mic 1 [14][unit:db]", 0, -84, 24, .001)))<: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow 2A/Mic 1 VH [unit:dB]", -80, 20));  
+gainMic_2A2(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow 2A/Mic 2 [15][unit:db]", 0, -84, 24, .001)))<: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow 2A/Mic 2 VH [unit:dB]", -80, 20));  
+gainMic_3O1(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow  3/Out1 [16][unit:db]", 0, -84, 24, .001)))<: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow  3/Out1 VH [unit:dB]", -80, 20));   
+gainMic_3O2(x) = x * si.smoo(ba.db2linear(vslider("t:Control/h:Mixer/h:Signal Flow  3/Out2 [17][unit:db]", 0, -84, 24, .001)))<: 
+    attach(_, VHmetersEnvelope(_) : vbargraph("t:Control/h:Mixer/h:Signal Flow  3/Out2 VH [unit:dB]", -80, 20));   
+
+//---------------------------------- TEST SIGNALS (Like Decorrelated Larsen) ---
+noise(initSeed) = LCG ~ _ : (_ / m)
+with{
+    // variables
+    // initSeed = an initial seed value
+    a = 18446744073709551557; // a large prime number
+    c = 12345; // a small prime number, such as 12345
+    m = 2 ^ 31; // 2.1 billion
+    // linear_congruential_generator
+    LCG(seed) = ((a * seed + c) + (initSeed-initSeed') % m);
+};
+
+Test(N) = par(i, N, fi.bandpass(4, 1000, 1020, noise((i+1) * 469762049)) * 400);
