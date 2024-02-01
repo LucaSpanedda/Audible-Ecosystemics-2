@@ -1,0 +1,23 @@
+Luca Spanedda's Recordings info:
+Basic_Cycle_CntrlMic_1 = 1 microphone, 2 monitors + cntrlMic1 
+- Recs. Mono
+- 00:00 - 01:58 - REC 1
+- 01:58 - 03:08 - REC 2
+- 03:08 - 05:32 - REC 3
+
+Basic_Cycle_CntrlMic_1+CntrlMic_2 = 2 microphones, 2 monitors + cntrlMic1 and cntrlMic2
+- Recs. Stereo
+- 00:00 - 03:04 - REC 1
+- 03:04 - 06:08 - REC 2
+
+Agostino Di Scipio's comments:
+Basic_Cycle_CntrlMic_1 = 1 microphone 2 monitors + cntrlMic1 
+- Recs. Mono
+- 00:00 - 01:58 - REC 1 - good, simple but with more than one resonance (you/something moves around the room)
+- 01:58 - 03:08 - REC 2 - same
+- 03:08 - 05:32 - REC 3 - attempt to force, however often 2nd order osc is established (amp up/down repeated), sometimes better. Either way is fine, because in a real situation the forcing will be in the context of the other processes (samp and grain). In general, when I personally do forcing (especially in the beginning) then I close the mics, or turn them down a lot right after the bang.
+
+Basic_Cycle_CntrlMic_1+CntrlMic_2 = 2 microphones 2 monitors + cntrlMic1 and cntrlMic2
+- Recs. Stereo
+- 00:00 - 03:04 - REC 1 - good that there are variable resonances (are you "playing" the microphones? or are you moving around?). The initial forcing attempt in short is worth what I wrote above (REC 3 of the first file).
+- 03:04 - 06:08 - REC 2 - good, like REC 1 and REC 2 of the previous file, but with some frequencies in higher register
