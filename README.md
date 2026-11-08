@@ -15,14 +15,16 @@ It was used for the rehearsal at Auditorium Shigeru Ban, L'Aquila (24 May 2025) 
 
 ## Usage
 
-Compile with [Faust](https://faust.grame.fr), for example as a standalone application:
+Compile with [Faust](https://faust.grame.fr) as a standalone application, in double precision:
 
-```
-faust2caqt Audible_Ecosystemics_2.dsp
-```
+- macOS (CoreAudio): `faust2caqt -double -preset auto Audible_Ecosystemics_2.dsp`
+- Linux (ALSA): `faust2alqt -double Audible_Ecosystemics_2.dsp`
+- Linux (JACK): `faust2jaqt -double -preset auto Audible_Ecosystemics_2.dsp`
+
+`-double` computes the whole system in double precision; `-preset auto` adds a preset manager to the interface (not available in `faust2alqt`).
 
 The system has 4 inputs (microphones) and 6 outputs.
-The sample rate is set to 44100 Hz in `aelibrary.lib` (`SampleRate`).
+Run the audio interface at 44.1 kHz: buffer and grain lengths are computed from the fixed value `SampleRate = 44100` in `aelibrary.lib`.
 
 ## Score
 
