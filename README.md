@@ -15,13 +15,17 @@ It was used for the rehearsal at Auditorium Shigeru Ban, L'Aquila (24 May 2025) 
 
 ## Usage
 
+`aelibrary.lib` must be in the same folder as `Audible_Ecosystemics_2.dsp`.
+
 Compile with [Faust](https://faust.grame.fr) as a standalone application, in double precision:
 
 - macOS (CoreAudio): `faust2caqt -double -preset auto Audible_Ecosystemics_2.dsp`
-- Linux (ALSA): `faust2alqt -double Audible_Ecosystemics_2.dsp`
 - Linux (JACK): `faust2jaqt -double -preset auto Audible_Ecosystemics_2.dsp`
+- Linux (ALSA, without JACK): `faust2alqt -double Audible_Ecosystemics_2.dsp`
 
-`-double` computes the whole system in double precision; `-preset auto` adds a preset manager to the interface (not available in `faust2alqt`).
+`-double` computes the whole system in double precision; `-preset auto` adds a preset manager to the interface.
+
+Without compiling (Windows, macOS, Linux): open `Audible_Ecosystemics_2.dsp` in [FaustLive](https://github.com/grame-cncm/faustlive/releases), which compiles and runs it directly. For a quick test, the online [Faust IDE](https://faustide.grame.fr) runs it in the browser, usually with 2 inputs only.
 
 The system has 4 inputs (microphones) and 6 outputs.
 Run the audio interface at 44.1 kHz: buffer and grain lengths are computed from the fixed value `SampleRate = 44100` in `aelibrary.lib`.
