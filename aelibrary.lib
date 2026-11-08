@@ -7,76 +7,68 @@ instructions of the year 2017 edited in L’Aquila, Italy";
 // import faust standard library
 import("stdfaust.lib");
 
-// PERFORMANCE SYSTEM VARIABLES
+
+/*******************************************************************************
+* PERFORMANCE SYSTEM VARIABLES
+*******************************************************************************/
+
 SampleRate = 44100;
 var1 = nentry("h:Main Controls/v:Var/Var 1", 10.0, 1, 20, 1);
-var2 = nentry("h:Main Controls/v:Var/boundary frequency (Var 2) [unit:Hz]", 2000, 1, 20000, 1);
-var3 = nentry("h:Main Controls/v:Var/Var 3", 0.50, 0, 1, .001);
+var2 = nentry("h:Main Controls/v:Var/boundary frequency (Var 2) [unit:Hz]",
+    2000, 1, 20000, 1);
+var3 = nentry("h:Main Controls/v:Var/Var 3", 0.50, 0, 1, 0.001);
 var4 = nentry("h:Main Controls/v:Var/Var 4", 15.0, 1, 20, 1);
 
-//------- ------------- ----- -----------
-//-- LIBRARY -------------------------------------------------------------------
-//------- --------
 
-// constant values
-EPS = ma.EPSILON;
-SR = ma.SR;
-T = 1.0 / SR;
-PIT = ma.PI * ma.T;
-TWOPI = 2.0 * ma.PI;
-TWOPIT = TWOPI * T;
+/*******************************************************************************
+* UTILITIES
+*******************************************************************************/
 
-//----------------------------------------------------------------- UTILITIES --
 // limit function for library and system
 limit(maxl, minl, x) = x : max(minl, min(maxl));
 
-//-------------------------------------------------------------------- DELAYS --
-delayfb(delSec,fb,x) = loop ~ _ : mem
-with{
-    loop(z) = (limit(1.0, -1.0, (z * fb + x)) @(max(0, ba.sec2samp(delSec)-1)));
+
+/*******************************************************************************
+* DELAYS
+*******************************************************************************/
+
+delayfb(delSec, fb, x) = loop ~ _ : mem
+with {
+    loop(z) = (limit(1.0, -1.0, (z * fb + x)) @(max(0, ba.sec2samp(delSec) - 1)));
 };
 
-//---------------------------------------------------------------- SAMPLEREAD --
-sampler(i, wIdx, bufferLength, grainLenght, grainPitch, x) = (y @ lookahead) * envSmooth
+
+/*******************************************************************************
+* SAMPLEREAD
+*******************************************************************************/
+
+sampler(i, wIdx, bufferLength, grainLenght, grainPitch, x) =
+    (y @ lookahead) * envSmooth
     with {
         S = SampleRate * 20;
         R = SampleRate * bufferLength;
         ph = f ~ _
-            with{
+            with {
                 f(s) = (s + grainPitch) % max(1, grainLenght * R);
             };
         rIdx = ph % R;
-        y = it.frwtable(3, S, .0, wIdx, x, rIdx);
-        lookahead = .01 * SampleRate;
+        y = it.frwtable(3, S, 0.0, wIdx, x, rIdx);
+        lookahead = 0.01 * SampleRate;
         needsEnv = ph < ph';
         envState = fi.pole(1.0 - needsEnv, 1.0 - needsEnv);
         envStep = 1.0 - (envState < lookahead);
-        envSmooth = LPCascadesampler(4, SampleRate / lookahead, envStep);
-    };
-onePoleTPTsampler(CF, x) = loop ~ _ : ! , si.bus(3)
-    with {
-        g = tan(CF * PIT);
-        G = g / (1.0 + g);
-        loop(s) = u , LP , HP , AP
-            with {
-                v = (x - s) * G;
-                u = v + LP;
-                LP = v + s;
-                HP = x - LP;
-                AP = LP - HP;
-            };
+        envSmooth = LPCascade(4, SampleRate / lookahead, envStep);
     };
 
-LPsampler(CF, x) = onePoleTPTsampler(CF, x) : (_ , ! , !);
-LPCascadesampler(N, CF, x) = x : seq(i, N, LPsampler(CFCorrection))
-    with {
-        CFCorrection = CF / sqrt(pow(2.0, 1.0 / N) - 1.0);
-    };
 
-//--------------------------------------------------------------- INTEGRATOR ---
-integrator(seconds, x) = an.abs_envelope_tau(limit(1000,.001,seconds), x);
+/*******************************************************************************
+* FEATURE EXTRACTION
+*******************************************************************************/
 
-//----------------------------------------------------------------- LOCALMAX ---
+// Integrator (amplitude follower)
+integrator(seconds, x) = an.abs_envelope_tau(limit(1000, 0.001, seconds), x);
+
+// Local maximum
 localMax(seconds, x) = loop ~ si.bus(4) : _ , ! , ! , !
 with {
     loop(yState, timerState, peakState, timeInSamplesState) =
@@ -91,16 +83,25 @@ with {
     };
 };
 
-localmax(resetPeriod, x) = localMax(limit(1000,0,resetPeriod), x);
+localmax(resetPeriod, x) = localMax(limit(1000, 0, resetPeriod), x);
 
-//----------------------------------------------------------------- TRIANGLE ---
-triangularFunc(x) = abs(ma.frac((x - .5)) * 2.0 - 1.0);
-triangleWave(f) = triangularFunc(os.phasor(1,f));
 
-//------------------------------------------------------------------ FILTERS ---
+/*******************************************************************************
+* OSCILLATORS
+*******************************************************************************/
+
+// Triangle wave
+triangularFunc(x) = abs(ma.frac((x - 0.5)) * 2.0 - 1.0);
+triangleWave(f) = triangularFunc(os.phasor(1, f));
+
+
+/*******************************************************************************
+* FILTERS
+*******************************************************************************/
+
 onePoleTPT(cf, x) = loop ~ _ : ! , si.bus(3)
 with {
-    g = tan(cf * ma.PI * (1/ma.SR));
+    g = tan(cf * ma.PI * (1 / ma.SR));
     G = g / (1.0 + g);
     loop(s) = u , lp , hp , ap
     with {
@@ -112,32 +113,14 @@ with {
     };
 };
 
-SVFTPT(Q, cf, x) = loop ~ si.bus(2) : (! , ! , _ , _ , _ , _ , _)
-    with {
-        g = tan(cf * ma.PI * (1.0/ma.SR));
-        R = 1.0 / (2.0 * Q);
-        G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
-        G2 = 2.0 * R + g;
-        loop(s1, s2) = u1 , u2 , lp , hp , bp , bp * 2.0 * R , x - bp * 4.0 * R
-            with {
-                hp = (x - s1 * G2 - s2) * G1;
-                v1 = hp * g;
-                bp = s1 + v1;
-                v2 = bp * g;
-                lp = s2 + v2;
-                u1 = v1 + bp;
-                u2 = v2 + lp;
-            };
-    };
-
 SVFTPT2(K, Q, CF, x) = circuitout : ! , ! , _ , _ , _ , _ , _ , _ , _ , _
-with{
+with {
     g = tan(CF * ma.PI / ma.SR);
     R = 1.0 / (2.0 * Q);
     G1 = 1.0 / (1.0 + 2.0 * R * g + g * g);
     G2 = 2.0 * R + g;
     circuit(s1, s2) = u1 , u2 , lp , hp , bp, notch, apf, ubp, peak, bshelf
-        with{
+        with {
             hp = (x - s1 * G2 - s2) * G1;
             v1 = hp * g;
             bp = s1 + v1;
@@ -145,11 +128,11 @@ with{
             lp = s2 + v2;
             u1 = v1 + bp;
             u2 = v2 + lp;
-            notch = x - ((2*R)*bp);
-            apf = x - ((4*R)*bp);
-            ubp = ((2*R)*bp);
-            peak = lp -hp;
-            bshelf = x + (((2*K)*R)*bp);
+            notch = x - ((2 * R) * bp);
+            apf = x - ((4 * R) * bp);
+            ubp = ((2 * R) * bp);
+            peak = lp - hp;
+            bshelf = x + (((2 * K) * R) * bp);
         };
     // choose the output from the SVF Filter (ex. bshelf)
     circuitout = circuit ~ si.bus(2);
@@ -163,11 +146,11 @@ LPSVF(Q, CF, x) = SVFTPT2(0, Q, max(ma.EPSILON, min(20480, CF)), x) :
 HPSVF(Q, CF, x) = SVFTPT2(0, Q, max(ma.EPSILON, min(20480, CF)), x) :
   ! , _ , ! , ! , ! , ! , ! , !;
 
-BPsvftpt(bw, cf, x) = Q , CF , x : SVFTPT : (! , ! , ! , _ , !)
+BPsvftpt(bw, cf, x) = SVFTPT2(0, Q, CF, x) : (! , ! , ! , ! , ! , _ , ! , !)
     with {
         CF = max(20, min(20480, LPTPT(1, cf)));
         BW = max(1, min(20480, LPTPT(1, bw)));
-        Q = max(.01, min(100, BW / CF));
+        Q = max(0.01, min(100, BW / CF));
     };
 
 // Butterworth
@@ -210,6 +193,7 @@ HP5(CF, x) = x : HPButterworthN(5, CF);
 
 // CF correction
 LPCF(CF, x) = onePoleTPT(CF, x) : (_ , ! , !);
+HPCF(CF, x) = onePoleTPT(CF, x) : (! , _ , !);
 LPCascade(N, CF, x) = x : seq(i, N, LPCF(CFCorrection))
     with {
         CFCorrection = CF / sqrt(pow(2.0, 1.0 / N) - 1.0);
@@ -219,23 +203,31 @@ LPCascade2(N, CF, x) = x : seq(i, N, LPTPT(CFCorrection))
         CFCorrection = CF / sqrt(pow(2.0, 1.0 / N) - 1.0);
     };
 
-HPCascade(N, CF, x) = x : seq(i, N, LPCF(CFCorrection))
+HPCascade(N, CF, x) = x : seq(i, N, HPCF(CFCorrection))
     with {
-        CFCorrection = CF / sqrt(pow(2.0, 1.0 / N) - 1.0);
+        CFCorrection = CF * sqrt(pow(2.0, 1.0 / N) - 1.0);
     };
 
-// questo approssima la risposta al gradino del global control
-//process = 0.5 : LP4(25) <: _ ^ 2, LPTPT(2) ^ 2; 
-
-// lp4 -> sottocampionamento kyma (guarda patch markidis) -> smoother interp. kyma 100ms -> x ^ 2
+// Notes on the Kyma original (open points; see Sanfilippo & Spanedda,
+// EMS 2025, sec. 3.1, on higher-order filters as cascaded first-order
+// sections)
+// - Global control in Kyma: LP4 -> control-rate subsampling (see Markidis'
+//   patch) -> Kyma smoother interpolation (100 ms) -> x ^ 2.
+//   Test approximating the step response of the global control:
+//process = 0.5 : LP4(25) <: _ ^ 2, LPTPT(2) ^ 2;
+//   alternative smoother:
 //<: _ ^ 2, LPTPT(1.5) ^ 2;
-// comment: i filtri di Kyma ex. LP4 a 1Hz sono butterworth - il picco è raggiunto a 12775 samples
-// domanda:  i nostri butterworth hanno la correzione del cutoff?
-// P.S.
-// e i filtri di Kyma sono clippati oltre il valore 1.0
+// - Measured in Kyma: an LP4 at 1 Hz behaves like a Butterworth filter,
+//   with its peak reached at 12775 samples.
+// - Do our Butterworth filters need cutoff correction? No: LPButterworthN
+//   is at -3 dB at the cutoff for every order (measured, LP2-LP5 at 1 kHz:
+//   -3.01 dB). Correction is needed only for cascades of first-order
+//   sections (see LPCascade): an uncorrected 4th-order cascade is at -12 dB.
+// - Kyma filters clip their values beyond 1.0.
 
 /*
-// Filters Order in series
+// Alternative, not used: higher-order filters as cascades of first-order
+// sections without cutoff correction (LP1-LP5 above are Butterworth)
 LP1(CF, x) = x : LPTPT(CF);
 HP1(CF, x) = x : HPTPT(CF);
 LP2(CF, x) = x : LPTPT(CF) : LPTPT(CF);
@@ -247,7 +239,12 @@ HP4(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
 LP5(CF, x) = x : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF) : LPTPT(CF);
 HP5(CF, x) = x : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF) : HPTPT(CF);
 */
-//-------------------------------------------------------- GRANULAR SAMPLING ---
+
+
+/*******************************************************************************
+* GRANULAR SAMPLING
+*******************************************************************************/
+
 grain(L, position, duration, x, trigger) = hann(phase) * buffer(readPtr, x)
 with {
     maxLength = SampleRate * 20;
@@ -259,7 +256,7 @@ with {
         with {
             ready = ((yState == 0.0) | (yState == 1.0)) & trigger;
             y = ba.if(ready, increment, min(1.0, yState + increment));
-            increment = ba.if(ready, (1.0/ma.SR) / max((1.0/ma.SR), duration),
+            increment = ba.if(ready, (1.0 / ma.SR) / max((1.0 / ma.SR), duration),
                 incrementState);
         };
     };
@@ -270,7 +267,7 @@ with {
     grainDuration = lock(duration);
     readPtr = grainPosition * length + phase * grainDuration * ma.SR;
     buffer(readPtr, x) =
-        it.frwtable(3, maxLength, .0, writePtr, x, readPtrWrapped)
+        it.frwtable(3, maxLength, 0.0, writePtr, x, readPtrWrapped)
     with {
         writePtr = ba.period(length);
         readPtrWrapped = ma.modulo(readPtr, length);
@@ -285,7 +282,7 @@ with {
     with {
         init = 1 - 1';
         trigger = (phState < phState') + init;
-        incr = ba.if(trigger, rate * (1.0/ma.SR), incrState);
+        incr = ba.if(trigger, rate * (1.0 / ma.SR), incrState);
         ph = ma.frac(incr + phState);
         counter = (trigger + counterState) % N;
     };
@@ -298,17 +295,21 @@ granular_sampling(var1, timeIndex, memWriteDel, cntrlLev, divDur, x) =
     grainN(10, var1, position, rate, duration, x) :> _
 with {
     rnd = no.noise;
-    memPointerJitter = rnd * (1.0 - memWriteDel) * .01;
-    position = timeIndex * (1.0 - ((1.0 - memWriteDel) * .01)) +
+    memPointerJitter = rnd * (1.0 - memWriteDel) * 0.01;
+    position = timeIndex * (1.0 - ((1.0 - memWriteDel) * 0.01)) +
         memPointerJitter;
     density = 1.0 - cntrlLev;
     rate = 50 ^ (density * 2.0 - 1.0);
-    grainDuration = .023 + (1.0 - memWriteDel) / divDur;
-    duration = grainDuration + grainDuration * .1 * rnd;
+    grainDuration = 0.023 + (1.0 - memWriteDel) / divDur;
+    duration = grainDuration + grainDuration * 0.1 * rnd;
 };
 
-//---------------------------------------------------------------------- GUI ---
-VHmetersEnvelope = abs : max ~ -(1.0/ma.SR) :
+
+/*******************************************************************************
+* GUI
+*******************************************************************************/
+
+VHmetersEnvelope = abs : max ~ -(1.0 / ma.SR) :
     max(ba.db2linear(-84)) : ba.linear2db;
 
 inspect(i, lower, upper) = _ * 1000 <: _ ,
@@ -316,10 +317,12 @@ inspect(i, lower, upper) = _ * 1000 <: _ ,
         attach : _ / 1000;
 
 // GUI - general rescale all outputs values
-globalGain = si.smoo(ba.db2linear(vslider("h:Main Controls/general [unit:db]", 0, -80, 40, 1)));
+globalGain = si.smoo(ba.db2linear(
+    vslider("h:Main Controls/general [unit:db]", 0, -80, 40, 1)));
 
-// GUI - rescale Microphone 1/2 values in the outout section (direct larsen)
-directOut = si.smoo(ba.db2linear(vslider("h:Main Controls/directOut [unit:db]", 0, -80, 40, 1)));
+// GUI - rescale Microphone 1/2 values in the output section (direct larsen)
+directOut = si.smoo(ba.db2linear(
+    vslider("h:Main Controls/directOut [unit:db]", 0, -80, 40, 1)));
 
 // GUI - rescale Granulators and plot Inspectors
 GSinspect(i, x) = x * si.smoo(ba.db2linear(
@@ -354,7 +357,7 @@ Attentninspect(i, x) = x * si.smoo(ba.db2linear(
       vbargraph("h:Microphones/Attentnv %i [unit:db]",
       -80, 20));
 
-// GUI - rescale Microphones 1 and 2
+// GUI - rescale MaxDiff and plot Inspectors
 MaxDiffinspect(i, x) = x * si.smoo(ba.db2linear(
     vslider("h:Extracted Control-Signals/MaxDiff %i [unit:db]",
     0, -80, 24, 1))) <:
